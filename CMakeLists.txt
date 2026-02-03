@@ -21,6 +21,8 @@ set(SOURCES
     src/plugin.cpp
     src/ABHandler.h
     src/ABHandler.cpp
+    src/settings.h
+    src/settings.cpp
 )
 
 add_commonlibsse_plugin(${PROJECT_NAME} SOURCES ${SOURCES}) # <--- specifies plugin.cpp
