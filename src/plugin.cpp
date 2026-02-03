@@ -1,5 +1,8 @@
 #include "PCH.h"
 
+#include "ABHandler.h"
+#include "settings.h"
+
 #include <Windows.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/msvc_sink.h>
@@ -42,7 +45,8 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse) {
     auto version = plugin->GetVersion();
     log::info("{} {} is loading...", plugin->GetName(), version);
     SKSE::Init(skse);
-
+    ABHook::Install();
+    settings::load();
     log::info("{} has finished loading.", plugin->GetName());
     return true;
 }
