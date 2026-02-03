@@ -7,7 +7,7 @@ set(BUILD_TESTS OFF CACHE BOOL "Build unit tests for CommonLibVR." FORCE)
 set(ENABLE_SKYRIM_VR OFF CACHE BOOL "" FORCE)
 
 # Set your project name. This will be the name of your SKSE .dll file.
-project(PLUGINNAME VERSION 0.0.1 LANGUAGES CXX)
+project(BlockOverhaul VERSION 0.0.1 LANGUAGES CXX)
 
 set(OUTPUT_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/output")
 
@@ -19,6 +19,8 @@ include(extern/CommonLibVR-ng/cmake/CommonLibSSE.cmake)
 
 set(SOURCES
     src/plugin.cpp
+    src/ABHandler.h
+    src/ABHandler.cpp
 )
 
 add_commonlibsse_plugin(${PROJECT_NAME} SOURCES ${SOURCES}) # <--- specifies plugin.cpp
@@ -29,7 +31,7 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE
 ) 
 
 target_include_directories(${PROJECT_NAME} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/extern/SimpleIni.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/extern
 )
 
 # When your SKSE .dll is compiled, this will automatically copy the .dll into your mods folder.
