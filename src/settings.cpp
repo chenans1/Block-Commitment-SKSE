@@ -31,7 +31,9 @@ namespace settings {
         }
 
         auto& c = Get();
-        c.commitDuration = ini_float(ini, "General", "commitDuration", c.commitDuration);
+        c.commitDuration = ini_float(ini, "general", "commitDuration", c.commitDuration);
+        c.log = ini_bool(ini, "general", "enableLog", c.log);
+
         log::info("Settings Loaded: commitDuration={}", c.commitDuration);
     }
 }
