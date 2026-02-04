@@ -18,16 +18,47 @@ static float ini_float(CSimpleIniA& ini, const char* section, const char* key, f
 namespace settings {
     //some stuff to handle the capturing of the keybind since i think onInput just straight up always polls even if the menu is closed
     inline std::atomic_bool g_captureBind{false};
-    inline bool g_waitingRelease = false;
+    //inline bool g_waitingRelease = false;
+
+    enum class CaptureTarget : std::uint8_t { None = 0, AltBlock, Modifier };
+    inline std::atomic<CaptureTarget> g_captureTarget{CaptureTarget::None};
+    inline std::atomic_bool g_waitingRelease{false};
+
+    static void startCapture(CaptureTarget target) { 
+        g_captureTarget.store(target, std::memory_order_release);
+        g_waitingRelease.store(true, std::memory_order_release);
+    }
+
+    static void stopCapture() {
+        g_captureTarget.store(CaptureTarget::None, std::memory_order_release);
+        g_waitingRelease.store(false, std::memory_order_release);
+    }
+
+    static void ApplyCapturedKey(CaptureTarget target, int keycode) {
+        auto& c = Get();
+        switch (target) {
+            case CaptureTarget::AltBlock:
+                c.altBlockKey = keycode;
+                break;
+            case CaptureTarget::Modifier:
+                c.modifierKey = keycode;
+                break;
+            default:
+                break;
+        }
+
+        save();
+        stopCapture();
+    }
 
     //fetch the input and save it
     bool __stdcall OnInput(RE::InputEvent* event) {
-        bool blockInput = false;
-
-        // only cba if the user hit the rebind button
-        if (!g_captureBind.load(std::memory_order_acquire)) {
-            return blockInput;
+        const auto target = g_captureTarget.load(std::memory_order_acquire);
+        if (target == CaptureTarget::None) {
+            return false;
         }
+
+        bool blockInput = true;
 
         if (!event) {
             return blockInput;
@@ -35,6 +66,13 @@ namespace settings {
 
         auto* btn = event->AsButtonEvent();
         if (!btn) {
+            return blockInput;
+        }
+
+        if (g_waitingRelease.load(std::memory_order_acquire)) {
+            if (!btn->IsDown()) {
+                g_waitingRelease.store(false, std::memory_order_release);
+            }
             return blockInput;
         }
 
@@ -46,15 +84,19 @@ namespace settings {
             return blockInput;
         }
 
+        // ESC = unbind and exit
+        if (btn->device.get() == RE::INPUT_DEVICE::kKeyboard) {
+            if (btn->GetIDCode() == 0x01) {
+                ApplyCapturedKey(target, -1);
+                return blockInput;
+            }
+        }
+
         const int macro = toKeyCode(*btn);
 
         if (macro != 0) {
             auto& c = Get();
-            c.altBlockKey = macro;
-
-            save();
-            g_captureBind.store(false, std::memory_order_release);
-            g_waitingRelease = true;
+            ApplyCapturedKey(target, macro);
         }
 
         return blockInput;
@@ -81,6 +123,7 @@ namespace settings {
         c.log = ini_bool(ini, "general", "enableLog", c.log);
         c.leftAttack = ini_bool(ini, "general", "isLeftAttack", c.leftAttack);
         c.altBlockKey = static_cast<int>(ini.GetLongValue("general", "altBlockKey", c.altBlockKey));
+        c.modifierKey = static_cast<int>(ini.GetLongValue("general", "modifierKey", c.modifierKey));
         c.isDoubleBindDisabled = ini_bool(ini, "general", "allowBlockDoubleBind", c.isDoubleBindDisabled);
 
         log::info("Settings Loaded: commitDuration={}, isLeftAttack={}, allowBlockDoubleBind={}", 
@@ -100,6 +143,7 @@ namespace settings {
         ini.SetLongValue("general", "enableLog", c.log ? 1 : 0);
         ini.SetLongValue("general", "isLeftAttack", c.leftAttack ? 1 : 0);
         ini.SetLongValue("general", "altBlockKey", c.altBlockKey);
+        ini.SetLongValue("general", "modifierKey", c.modifierKey);
         ini.SetLongValue("general", "allowBlockDoubleBind", c.isDoubleBindDisabled ? 1 : 0);
 
 
@@ -119,17 +163,45 @@ namespace settings {
         ImGuiMCP::Checkbox("Is left attack? (MCO/BFCO users = no)", &c.leftAttack);
         ImGuiMCP::Checkbox("Disable alt block if left is already block?", &c.isDoubleBindDisabled);
 
+        const auto capturing = g_captureTarget.load(std::memory_order_acquire);
+
+        ImGuiMCP::Separator();
         ImGuiMCP::Text("AltBlock Key: %d", c.altBlockKey);
-        if (!g_captureBind.load(std::memory_order_acquire)) {
-            if (ImGuiMCP::Button("Rebind")) {
-                g_captureBind.store(true, std::memory_order_release);
-            }
-        } else {
+
+        if (capturing == CaptureTarget::AltBlock) {
             ImGuiMCP::SameLine();
-            ImGuiMCP::TextUnformatted("Press any key / mouse button / gamepad button...");
-            if (ImGuiMCP::Button("Cancel")) {
-                g_captureBind.store(false, std::memory_order_release);
+            ImGuiMCP::TextUnformatted("Press a key... (ESC = unbind)");
+        } else if (capturing == CaptureTarget::None) {
+            if (ImGuiMCP::Button("Rebind AltBlock")) {
+                startCapture(CaptureTarget::AltBlock);
             }
+            ImGuiMCP::SameLine();
+            if (ImGuiMCP::Button("Unbind AltBlock")) {
+                c.altBlockKey = -1;
+                save();
+            }
+        }
+
+        ImGuiMCP::Separator();
+        ImGuiMCP::Text("Modifier Key: %d", c.modifierKey);
+
+        if (capturing == CaptureTarget::Modifier) {
+            ImGuiMCP::SameLine();
+            ImGuiMCP::TextUnformatted("Press a key... (ESC = unbind)");
+        } else if (capturing == CaptureTarget::None) {
+            if (ImGuiMCP::Button("Rebind Modifier")) {
+                startCapture(CaptureTarget::Modifier);
+            }
+            ImGuiMCP::SameLine();
+            if (ImGuiMCP::Button("Unbind Modifier")) {
+                c.modifierKey = -1;
+                save();
+            }
+        }
+
+        if (capturing != CaptureTarget::None) {
+            ImGuiMCP::Separator();
+            ImGuiMCP::TextUnformatted("Listening for input... (ESC unbinds)");
         }
 
         ImGuiMCP::Checkbox("Enable Log", &c.log);

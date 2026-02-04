@@ -6,6 +6,7 @@ namespace settings {
         float commitDuration = 0.3f;
         bool leftAttack = false;
         int altBlockKey = -1;
+        int modifierKey = -1;
         bool isDoubleBindDisabled = false;
 	};
 
@@ -15,6 +16,7 @@ namespace settings {
     inline float log() { return Get().log; }
     inline bool leftAttack() { return Get().leftAttack; }
     inline int getAltBlock() { return Get().altBlockKey; }
+    inline int getModifierKey() { return Get().modifierKey; }
     inline int isDoubleBindDisabled() { return Get().isDoubleBindDisabled; }
 
     void RegisterMenu();
