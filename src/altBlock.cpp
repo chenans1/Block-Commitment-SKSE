@@ -2,7 +2,7 @@
 #include "altBlock.h"
 #include "settings.h"
 #include "utils.h"
-#include "altBlockCommit.h"
+#include "blockCommit.h"
 
 //largely adapted from Dual Wield Parrying SKSE
 //https://github.com/DennisSoemers/DualWieldParryingSKSE/blob/main/src/InputEventHandler.cpp
@@ -109,7 +109,7 @@ namespace altBlock {
                     SKSE::log::info("Block Key release: Held for {}, remaining block duration = {}", 
                         held_duration, remaining_duration);
                 }
-                altController->wantReleaseBlock();
+                altController->wantReleaseAltBlock();
                 return RE::BSEventNotifyControl::kContinue;
             }
 
