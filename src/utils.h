@@ -20,4 +20,6 @@ namespace utils {
     }
 
     bool isLeftKeyBlock(RE::PlayerCharacter* player);
+    //borderline just the same function with less restrictions, will be expanded to include magic blocking later.
+    bool canAltBlock(RE::PlayerCharacter* player);
 }
