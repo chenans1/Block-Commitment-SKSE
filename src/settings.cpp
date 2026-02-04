@@ -16,24 +16,24 @@ static float ini_float(CSimpleIniA& ini, const char* section, const char* key, f
 }
 
 //i think this should convert it do dxInputScanCodes idk xdddd
-static int toKeycode(const RE::ButtonEvent& event) {
-    const auto device = event.device.get();
-    const auto id = event.GetIDCode();
-
-    switch (device) {
-        case RE::INPUT_DEVICE::kKeyboard:
-            return static_cast<int>(id);
-
-        case RE::INPUT_DEVICE::kMouse:
-            return static_cast<int>(id + SKSE::InputMap::kMacro_MouseButtonOffset);
-
-        case RE::INPUT_DEVICE::kGamepad:
-            return static_cast<int>(SKSE::InputMap::GamepadMaskToKeycode(id));
-
-        default:
-            return 0;
-    }
-}
+//static int toKeycode(const RE::ButtonEvent& event) {
+//    const auto device = event.device.get();
+//    const auto id = event.GetIDCode();
+//
+//    switch (device) {
+//        case RE::INPUT_DEVICE::kKeyboard:
+//            return static_cast<int>(id);
+//
+//        case RE::INPUT_DEVICE::kMouse:
+//            return static_cast<int>(id + SKSE::InputMap::kMacro_MouseButtonOffset);
+//
+//        case RE::INPUT_DEVICE::kGamepad:
+//            return static_cast<int>(SKSE::InputMap::GamepadMaskToKeycode(id));
+//
+//        default:
+//            return 0;
+//    }
+//}
 
 namespace settings {
     //some stuff to handle the capturing of the keybind since i think onInput just straight up always polls even if the menu is closed
@@ -65,11 +65,11 @@ namespace settings {
             return blockInput;
         }
 
-        const int macro = toKeycode(*btn);
+        const int macro = toKeyCode(*btn);
 
         if (macro != 0) {
             auto& c = Get();
-            c.dualWieldBlockKey = macro;
+            c.altBlockKey = macro;
 
             save();
             g_captureBind.store(false, std::memory_order_release);
@@ -99,7 +99,7 @@ namespace settings {
         c.commitDuration = ini_float(ini, "general", "commitDuration", c.commitDuration);
         c.log = ini_bool(ini, "general", "enableLog", c.log);
         c.leftAttack = ini_bool(ini, "general", "isLeftAttack", c.leftAttack);
-        c.dualWieldBlockKey = static_cast<int>(ini.GetLongValue("general", "dualWieldBlockKey", c.dualWieldBlockKey));
+        c.altBlockKey = static_cast<int>(ini.GetLongValue("general", "altBlockKey", c.altBlockKey));
 
         log::info("Settings Loaded: commitDuration={}, isLeftAttack={}", c.commitDuration, c.leftAttack);
     }
@@ -116,7 +116,7 @@ namespace settings {
         ini.SetDoubleValue("general", "commitDuration", static_cast<double>(c.commitDuration), "%.3f");
         ini.SetLongValue("general", "enableLog", c.log ? 1 : 0);
         ini.SetLongValue("general", "isLeftAttack", c.leftAttack ? 1 : 0);
-        ini.SetLongValue("general", "dualWieldBlockKey", c.dualWieldBlockKey);
+        ini.SetLongValue("general", "altBlockKey", c.altBlockKey);
 
         const SI_Error rc = ini.SaveFile(path);
         if (rc < 0) {
@@ -132,7 +132,7 @@ namespace settings {
 
         ImGuiMCP::DragFloat("Block Commitment Duration", &c.commitDuration, 0.01f, 0.0f, 5.0f, "%.2f");
 
-        ImGuiMCP::Text("Dual-wield block key: %d", c.dualWieldBlockKey);
+        ImGuiMCP::Text("AltBlock Key: %d", c.altBlockKey);
         if (!g_captureBind.load(std::memory_order_acquire)) {
             if (ImGuiMCP::Button("Rebind")) {
                 g_captureBind.store(true, std::memory_order_release);
@@ -159,5 +159,24 @@ namespace settings {
         SKSEMenuFramework::SetSection("Block Overhaul");
         SKSEMenuFramework::AddSectionItem("Settings", RenderMenuPage);
         SKSEMenuFramework::AddInputEvent(OnInput);
+    }
+
+    int toKeyCode(const RE::ButtonEvent& event) {
+        const auto device = event.device.get();
+        const auto id = event.GetIDCode();
+
+        switch (device) {
+            case RE::INPUT_DEVICE::kKeyboard:
+                return static_cast<int>(id);
+
+            case RE::INPUT_DEVICE::kMouse:
+                return static_cast<int>(id + SKSE::InputMap::kMacro_MouseButtonOffset);
+
+            case RE::INPUT_DEVICE::kGamepad:
+                return static_cast<int>(SKSE::InputMap::GamepadMaskToKeycode(id));
+
+            default:
+                return 0;
+        }
     }
 }
