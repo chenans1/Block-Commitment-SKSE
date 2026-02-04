@@ -46,6 +46,11 @@ namespace utils {
         //now check left, make sure it's either unarmed or one handed
         if (leftWeap) {
             const auto lType = leftWeap->GetWeaponType();
+            //if left = attack and right hand is 1h weapon then left hand must be empty
+            if (settings::leftAttack() && lType != RE::WeaponTypes::kHandToHandMelee) {
+                log::info("left = attack, left hand is not unarmed/shield");
+                return false;
+            }
             if (lType >= RE::WeaponTypes::kHandToHandMelee && lType <= RE::WeaponTypes::kOneHandMace) {
                 log::info("valid right hand, valid left hand");
                 return true;

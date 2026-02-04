@@ -2,6 +2,7 @@
 #include "ABHandler.h"
 #include "settings.h"
 #include "blockHandler.h"
+#include "utils.h"
 
 using namespace SKSE;
 using namespace SKSE::log;
@@ -19,20 +20,11 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
         log::warn("[ABHook]: missing self/ev/data/_ProcessButton");
         return;
     }
-
-    /*if (ev && ev->IsUp()) {
-        const char* s = ev->QUserEvent().c_str();
-        if (s && std::strcmp(s, "Left Attack/Block") == 0) {
-            if (auto* player = RE::PlayerCharacter::GetSingleton()) {
-                if (player->IsBlocking()) {
-                    log::info("Player is blocking and block key release detected");
-                } else {
-                    log::info("Left Attack/Block key released");
-                }
-            }
-        }
-    }*/
-    
+    //if it's not a valid equip combo -> return
+    auto* pc = RE::PlayerCharacter::GetSingleton();
+    if (!pc || !utils::isLeftKeyBlock(pc)) {
+        return _ProcessButton(self, ev, data);
+    }
     if (ev->QUserEvent() == "Left Attack/Block") {
         g_blockDevice = ev->GetDevice();
         g_blockIDCode = ev->GetIDCode();

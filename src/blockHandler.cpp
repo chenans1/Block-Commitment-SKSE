@@ -14,13 +14,6 @@ namespace block {
     }
 
     void blockHandler::OnBlockDown() {
-        auto* pc = RE::PlayerCharacter::GetSingleton();
-        if (!pc) {
-            return;
-        }
-        if (!utils::isLeftKeyBlock(pc)) {
-            return;
-        }
         _blockKeyHeld = true;
         _pending.active = false;
         _pending.remaining = 0.0f;

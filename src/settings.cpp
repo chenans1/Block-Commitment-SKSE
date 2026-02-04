@@ -33,7 +33,8 @@ namespace settings {
         auto& c = Get();
         c.commitDuration = ini_float(ini, "general", "commitDuration", c.commitDuration);
         c.log = ini_bool(ini, "general", "enableLog", c.log);
+        c.leftAttack = ini_bool(ini, "general", "isLeftAttack", c.leftAttack);
 
-        log::info("Settings Loaded: commitDuration={}", c.commitDuration);
+        log::info("Settings Loaded: commitDuration={}, isLeftAttack={}", c.commitDuration, c.leftAttack);
     }
 }
