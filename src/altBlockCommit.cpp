@@ -19,7 +19,7 @@ namespace altCommit {
 
         if (isBlocking) {
             if (auto* st = player->AsActorState()) st->actorState2.wantBlocking = 0;
-            if (settings::log()) SKSE::log::info("Delayed AltBlock Stopped");
+            if (settings::log()) SKSE::log::info("Delayed alt blockStop fired");
             player->NotifyAnimationGraph("blockStop");
         }
         return;
@@ -30,27 +30,29 @@ namespace altCommit {
         return std::addressof(singleton);
     }
 
-	void altController::delayedBlockStop(float duration) {
+    void altController::beginAltBlock() { 
+        _pending.wantStop = false;
+        _pending.blockDuration = 0.0f;
+    }
+
+	void altController::wantReleaseBlock() {
         //set our remaining to duration
         _pending.wantStop = true;
-        _pending.remaining = duration;
 	}
 
     void altController::Update(float a_delta) {
-        SKSE::log::info("[altController] Update()");
-        //only start decrementing if we want to stop, otherwise don't do anything
+        //SKSE::log::info("[altController] Update()");
+        _pending.blockDuration += a_delta;
+        //if we don't want to stop blocking, increment the counter
         if (!_pending.wantStop) {
             return;
         }
-        //substract the timer
-        _pending.remaining -= a_delta;
-        if (_pending.remaining > 0.0f) {
-            return;
+        //if we want to stop blocking: check if blockduration > commit duration
+        //if true allow unblock, if not do nothing
+        if (_pending.blockDuration >= settings::getCommitDur()) {
+            _pending.wantStop = false;
+            stopBlocking();
         }
-
-        //now this means we can just unblock 
-        _pending.wantStop = false;
-        stopBlocking();
         return;
    }
 }

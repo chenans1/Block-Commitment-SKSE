@@ -39,10 +39,11 @@ bool areControlsEnabled() {
 namespace altBlock {
     //start set the want block flag, if not already blocking we start the block
     static void StartBlock(RE::PlayerCharacter* player, RE::ActorState* st, bool isBlocking) {
-        //st->actorState2.wantBlocking = 1;
+        st->actorState2.wantBlocking = 1;
         if (!isBlocking) {
             if (settings::log()) SKSE::log::info("Starting AltBlock");
             player->NotifyAnimationGraph("blockStart");
+            //test setting the bWantBlock var to true
         }
     }
 
@@ -95,27 +96,23 @@ namespace altBlock {
             if (!st) {
                 return RE::BSEventNotifyControl::kContinue;
             }
+            auto* altController = altCommit::altController::GetSingleton();
+           
             if (btn->IsDown()) {
+                altController->beginAltBlock();
                 StartBlock(player, st, isBlocking);
                 return RE::BSEventNotifyControl::kContinue;
-            }
-            if (btn->IsUp()) {
-                const float held_duration = btn->HeldDuration();
-                const float remainingDuration = settings::getCommitDur() - held_duration;
-                if (remainingDuration+1e-6 > 0) {
-                    //need to queue the unblock here
-                    if (settings::log())
-                        SKSE::log::info("[altBlock]: held duration = {} didn't hold long enough, delay block for {}",
-                                        held_duration, remainingDuration);
-                    auto* altController = altCommit::altController::GetSingleton();
-                    altController->delayedBlockStop(held_duration);
-                } else {
-                    if (settings::log()) SKSE::log::info("[altBlock]: held duration = {} long enough hold, continue", held_duration);
-                    StopBlock(player, st, isBlocking);
+            } else {
+                if (settings::log()) {
+                    const float held_duration = btn->HeldDuration();
+                    const float remaining_duration = settings::getCommitDur() - held_duration;
+                    SKSE::log::info("Block Key release: Held for {}, remaining block duration = {}", 
+                        held_duration, remaining_duration);
                 }
-                
+                altController->wantReleaseBlock();
                 return RE::BSEventNotifyControl::kContinue;
             }
+
         }
         return RE::BSEventNotifyControl::kContinue;
     }

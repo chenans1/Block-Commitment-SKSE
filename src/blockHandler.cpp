@@ -62,7 +62,7 @@ namespace block {
         }
         //release was requested
         _releaseRequested = true;
-        log::info("releaseRequest=true");
+        if (settings::log()) log::info("releaseRequest=true");
     }
 
     bool blockHandler::consumeReleaseRequest() {

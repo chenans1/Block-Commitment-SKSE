@@ -4,7 +4,8 @@ namespace altCommit {
     class altController {
     public:
         static altController* GetSingleton();
-        void delayedBlockStop(float duration);
+        void beginAltBlock();
+        void wantReleaseBlock();
         void Update(float a_delta);
 
     private:
@@ -12,7 +13,7 @@ namespace altCommit {
 
         struct Pending {
             bool wantStop = false; 
-            float remaining = 0.0f;
+            float blockDuration = 0.0f;
         } _pending{};
     };
 }
