@@ -4,6 +4,8 @@ namespace blockCommit {
     class Controller {
     public:
         static Controller* GetSingleton();
+        void stopBlocking();
+
         void beginAltBlock();
         void wantReleaseAltBlock();
 
@@ -11,6 +13,7 @@ namespace blockCommit {
         bool wantReleaseLeftBlock();
 
         void Update(float a_delta);
+        
 
     private:
         Controller() = default;

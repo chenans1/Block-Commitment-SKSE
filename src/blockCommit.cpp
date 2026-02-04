@@ -5,7 +5,9 @@
 #include "settings.h"
 
 namespace blockCommit {
-    static void stopBlocking() {
+    void Controller::stopBlocking() {
+        _state.wantStop = false;
+        _state.blockDuration = 0.0f;
         auto* player = RE::PlayerCharacter::GetSingleton();
         if (!player) {
             return;
@@ -34,7 +36,7 @@ namespace blockCommit {
             if (settings::log()) {
                 SKSE::log::info("[wantReleaseAltBlock] allow release: block duration={}", _state.blockDuration);
             }
-            _state.blockDuration = 0.0f;
+            stopBlocking();
             return;
         }
         _state.wantStop = true;
