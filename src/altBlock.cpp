@@ -62,7 +62,11 @@ namespace altBlock {
         if (!validPlayerState(player) || !utils::canAltBlock(player)) {
             return RE::BSEventNotifyControl::kContinue;
         }
-
+        //disable the altblock if you don't need it to block
+        if (settings::isDoubleBindDisabled() && utils::isLeftKeyBlock(player)) {
+            if (settings::log()) SKSE::log::info("left key is block, no double binds - alt block denied");
+            return RE::BSEventNotifyControl::kContinue;
+        }
         const int bind = settings::getAltBlock();
         if (bind <= 0) {
             return RE::BSEventNotifyControl::kContinue;
@@ -76,16 +80,14 @@ namespace altBlock {
             if (macro != bind) continue;
             
             //if not blocking, then start blocking
-            // if fail to fetch the variable dont process
+            // if fail to fetch the variables dont process
             bool isBlocking = false;
             if (!player->GetGraphVariableBool("IsBlocking", isBlocking)) {
                 return RE::BSEventNotifyControl::kContinue;
             }
             // now we finally actually check if we are blocking.
             auto* st = player->AsActorState();
-            if (!st) {
-                return RE::BSEventNotifyControl::kContinue;
-            }
+            if (!st) { return RE::BSEventNotifyControl::kContinue; }
             auto* blockController = blockCommit::Controller::GetSingleton();
            
             if (btn->IsDown()) {
@@ -94,9 +96,7 @@ namespace altBlock {
             } else if (btn->IsUp()) {
                 blockController->wantReleaseAltBlock();
             }
-
             return RE::BSEventNotifyControl::kContinue;
-
         }
         return RE::BSEventNotifyControl::kContinue;
     }

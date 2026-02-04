@@ -81,9 +81,10 @@ namespace settings {
         c.log = ini_bool(ini, "general", "enableLog", c.log);
         c.leftAttack = ini_bool(ini, "general", "isLeftAttack", c.leftAttack);
         c.altBlockKey = static_cast<int>(ini.GetLongValue("general", "altBlockKey", c.altBlockKey));
-        c.allowBlockDoubleBind = ini_bool(ini, "general", "allowBlockDoubleBind", c.allowBlockDoubleBind);
+        c.isDoubleBindDisabled = ini_bool(ini, "general", "allowBlockDoubleBind", c.isDoubleBindDisabled);
+
         log::info("Settings Loaded: commitDuration={}, isLeftAttack={}, allowBlockDoubleBind={}", 
-            c.commitDuration, c.leftAttack, c.allowBlockDoubleBind);
+            c.commitDuration, c.leftAttack, c.isDoubleBindDisabled);
     }
 
     void save() { 
@@ -99,6 +100,8 @@ namespace settings {
         ini.SetLongValue("general", "enableLog", c.log ? 1 : 0);
         ini.SetLongValue("general", "isLeftAttack", c.leftAttack ? 1 : 0);
         ini.SetLongValue("general", "altBlockKey", c.altBlockKey);
+        ini.SetLongValue("general", "allowBlockDoubleBind", c.isDoubleBindDisabled ? 1 : 0);
+
 
         const SI_Error rc = ini.SaveFile(path);
         if (rc < 0) {
@@ -113,6 +116,8 @@ namespace settings {
         auto& c = Get();
 
         ImGuiMCP::DragFloat("Block Commitment Duration (Seconds)", &c.commitDuration, 0.01f, 0.0f, 5.0f, "%.2f");
+        ImGuiMCP::Checkbox("Is left attack? (MCO/BFCO users = no)", &c.leftAttack);
+        ImGuiMCP::Checkbox("Disable alt block if left is already block?", &c.isDoubleBindDisabled);
 
         ImGuiMCP::Text("AltBlock Key: %d", c.altBlockKey);
         if (!g_captureBind.load(std::memory_order_acquire)) {
@@ -126,7 +131,8 @@ namespace settings {
                 g_captureBind.store(false, std::memory_order_release);
             }
         }
-        
+
+        ImGuiMCP::Checkbox("Enable Log", &c.log);
 
     }
 
