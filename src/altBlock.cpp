@@ -2,6 +2,7 @@
 #include "altBlock.h"
 #include "settings.h"
 #include "utils.h"
+#include "altBlockCommit.h"
 
 //largely adapted from Dual Wield Parrying SKSE
 //https://github.com/DennisSoemers/DualWieldParryingSKSE/blob/main/src/InputEventHandler.cpp
@@ -46,7 +47,7 @@ namespace altBlock {
     }
 
     static void StopBlock(RE::PlayerCharacter* player, RE::ActorState* st, bool isBlocking) {
-        //st->actorState2.wantBlocking = 0;
+        st->actorState2.wantBlocking = 0;
         if (isBlocking) {
             if (settings::log()) SKSE::log::info("Stopping AltBlock");
             player->NotifyAnimationGraph("blockStop");
@@ -99,7 +100,20 @@ namespace altBlock {
                 return RE::BSEventNotifyControl::kContinue;
             }
             if (btn->IsUp()) {
-                StopBlock(player, st, isBlocking);
+                const float held_duration = btn->HeldDuration();
+                const float remainingDuration = settings::getCommitDur() - held_duration;
+                if (remainingDuration+1e-6 > 0) {
+                    //need to queue the unblock here
+                    if (settings::log())
+                        SKSE::log::info("[altBlock]: held duration = {} didn't hold long enough, delay block for {}",
+                                        held_duration, remainingDuration);
+                    auto* altController = altCommit::altController::GetSingleton();
+                    altController->delayedBlockStop(held_duration);
+                } else {
+                    if (settings::log()) SKSE::log::info("[altBlock]: held duration = {} long enough hold, continue", held_duration);
+                    StopBlock(player, st, isBlocking);
+                }
+                
                 return RE::BSEventNotifyControl::kContinue;
             }
         }

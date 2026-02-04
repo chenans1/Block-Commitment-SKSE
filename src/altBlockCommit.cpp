@@ -14,11 +14,10 @@ namespace altCommit {
         // if fail to fetch the variable dont process, if already not blocking don't send
         bool isBlocking = false;
         if (!player->GetGraphVariableBool("IsBlocking", isBlocking)) {
-            if (settings::log()) SKSE::log::info("Already no longer blocking");
             return;
         }
 
-        if (!isBlocking) {
+        if (isBlocking) {
             if (auto* st = player->AsActorState()) st->actorState2.wantBlocking = 0;
             if (settings::log()) SKSE::log::info("Delayed AltBlock Stopped");
             player->NotifyAnimationGraph("blockStop");
@@ -38,6 +37,7 @@ namespace altCommit {
 	}
 
     void altController::Update(float a_delta) {
+        SKSE::log::info("[altController] Update()");
         //only start decrementing if we want to stop, otherwise don't do anything
         if (!_pending.wantStop) {
             return;

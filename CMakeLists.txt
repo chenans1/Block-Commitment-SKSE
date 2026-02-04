@@ -32,6 +32,8 @@ set(SOURCES
     src/updateHook.cpp
     src/altBlock.h
     src/altBlock.cpp
+    src/altBlockCommit.h
+    src/altBlockCommit.cpp
 )
 
 add_commonlibsse_plugin(${PROJECT_NAME} SOURCES ${SOURCES}) # <--- specifies plugin.cpp

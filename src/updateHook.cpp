@@ -3,6 +3,7 @@
 #include "updateHook.h"
 #include "ABhandler.h"
 #include "blockHandler.h"
+#include "altBlockCommit.h"
 
 using namespace SKSE;
 using namespace SKSE::log;
@@ -20,5 +21,6 @@ namespace updateHook {
         _orig(this, a_delta);
         block::blockHandler::GetSingleton()->Update(a_delta);
         ABHook::Check();
+        altCommit::altController::GetSingleton()->Update(a_delta);
     }
 }
