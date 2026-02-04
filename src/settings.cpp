@@ -15,31 +15,12 @@ static float ini_float(CSimpleIniA& ini, const char* section, const char* key, f
     return static_cast<float>(ini.GetDoubleValue(section, key, def));
 }
 
-//i think this should convert it do dxInputScanCodes idk xdddd
-//static int toKeycode(const RE::ButtonEvent& event) {
-//    const auto device = event.device.get();
-//    const auto id = event.GetIDCode();
-//
-//    switch (device) {
-//        case RE::INPUT_DEVICE::kKeyboard:
-//            return static_cast<int>(id);
-//
-//        case RE::INPUT_DEVICE::kMouse:
-//            return static_cast<int>(id + SKSE::InputMap::kMacro_MouseButtonOffset);
-//
-//        case RE::INPUT_DEVICE::kGamepad:
-//            return static_cast<int>(SKSE::InputMap::GamepadMaskToKeycode(id));
-//
-//        default:
-//            return 0;
-//    }
-//}
-
 namespace settings {
     //some stuff to handle the capturing of the keybind since i think onInput just straight up always polls even if the menu is closed
     inline std::atomic_bool g_captureBind{false};
     inline bool g_waitingRelease = false;
 
+    //fetch the input and save it
     bool __stdcall OnInput(RE::InputEvent* event) {
         bool blockInput = false;
 
@@ -130,14 +111,12 @@ namespace settings {
     void __stdcall RenderMenuPage() { 
         auto& c = Get();
 
-        ImGuiMCP::DragFloat("Block Commitment Duration", &c.commitDuration, 0.01f, 0.0f, 5.0f, "%.2f");
+        ImGuiMCP::DragFloat("Block Commitment Duration (Seconds)", &c.commitDuration, 0.01f, 0.0f, 5.0f, "%.2f");
 
         ImGuiMCP::Text("AltBlock Key: %d", c.altBlockKey);
         if (!g_captureBind.load(std::memory_order_acquire)) {
             if (ImGuiMCP::Button("Rebind")) {
                 g_captureBind.store(true, std::memory_order_release);
-                // optional: clear while capturing
-                // c.dualWieldBlockKey = 0;
             }
         } else {
             ImGuiMCP::SameLine();

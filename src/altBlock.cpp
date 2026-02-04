@@ -40,7 +40,7 @@ namespace altBlock {
     static void StartBlock(RE::PlayerCharacter* player, RE::ActorState* st, bool isBlocking) {
         //st->actorState2.wantBlocking = 1;
         if (!isBlocking) {
-            SKSE::log::info("Starting AltBlock");
+            if (settings::log()) SKSE::log::info("Starting AltBlock");
             player->NotifyAnimationGraph("blockStart");
         }
     }
@@ -48,7 +48,7 @@ namespace altBlock {
     static void StopBlock(RE::PlayerCharacter* player, RE::ActorState* st, bool isBlocking) {
         //st->actorState2.wantBlocking = 0;
         if (isBlocking) {
-            SKSE::log::info("Stopping AltBlock");
+            if (settings::log()) SKSE::log::info("Stopping AltBlock");
             player->NotifyAnimationGraph("blockStop");
         }
     }
@@ -98,7 +98,6 @@ namespace altBlock {
                 StartBlock(player, st, isBlocking);
                 return RE::BSEventNotifyControl::kContinue;
             }
-
             if (btn->IsUp()) {
                 StopBlock(player, st, isBlocking);
                 return RE::BSEventNotifyControl::kContinue;

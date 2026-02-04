@@ -17,9 +17,15 @@ namespace utils {
         const auto* leftWeap = leftForm ? leftForm->As<RE::TESObjectWEAP>() : nullptr;
         const auto* leftShield = leftForm ? leftForm->As<RE::TESObjectARMO>() : nullptr;
 
+        //shield: always can block
+        if (leftShield) {
+            // log::info("shield equipped");
+            return true;
+        }
+
         // you can't block without a weapon in the right hand
         if (!rightWeap) {
-            log::info("no right handed weapon");
+            //log::info("no right handed weapon");
             return false;
         }
 
@@ -27,32 +33,28 @@ namespace utils {
 
         // 1: check if two handed
         if (rType >= RE::WeaponTypes::kTwoHandSword && rType <= RE::WeaponTypes::kTwoHandAxe) {
-            log::info("two handed weapon");
+            //log::info("two handed weapon");
             return true;
         }
 
         // 2: if right hand isn't 1h and isn't 2h then we return false;
         const bool validRight = (rType >= RE::WeaponTypes::kHandToHandMelee && rType <= RE::WeaponTypes::kOneHandMace);
         if (!validRight) {
-            log::info("invalid right hand type");
+            //log::info("invalid right hand type");
             return false;
         }
-        // 3: now we always have a valid right hand weapon in this case
-        if (leftShield) {
-            log::info("shield equipped");
-            return true;
-        }
+        
 
         // now check left, make sure it's either unarmed or one handed
         if (leftWeap) {
             const auto lType = leftWeap->GetWeaponType();
             // if left = attack and right hand is 1h weapon then left hand must be empty
             if (settings::leftAttack() && lType != RE::WeaponTypes::kHandToHandMelee) {
-                log::info("left = attack, left hand is not unarmed/shield");
+                //log::info("left = attack, left hand is not unarmed/shield");
                 return false;
             }
             if (lType >= RE::WeaponTypes::kHandToHandMelee && lType <= RE::WeaponTypes::kOneHandMace) {
-                log::info("valid right hand, valid left hand");
+                //log::info("valid right hand, valid left hand");
                 return true;
             }
         }
@@ -60,49 +62,34 @@ namespace utils {
         return false;
     }
 
+    //need to check if right hand allows for blocking only - must not be bow
     bool canAltBlock(RE::PlayerCharacter* player) {
         if (!player) return false;
         const auto* rightForm = player->GetEquippedObject(false);
-        const auto* leftForm = player->GetEquippedObject(true);
         const auto* rightWeap = rightForm ? rightForm->As<RE::TESObjectWEAP>() : nullptr;
-        const auto* leftWeap = leftForm ? leftForm->As<RE::TESObjectWEAP>() : nullptr;
+
+        const auto* leftForm = player->GetEquippedObject(true);
         const auto* leftShield = leftForm ? leftForm->As<RE::TESObjectARMO>() : nullptr;
+
+        //if you have left shield always can block, but you don't need alt block key in this case so uhhh?
+        if (leftShield) {
+            // log::info("shield equipped");
+            return true;
+        }
 
         // you can't block without a weapon in the right hand
         if (!rightWeap) {
-            log::info("no right handed weapon");
+            //log::info("no right handed weapon");
             return false;
         }
 
         const auto rType = rightWeap->GetWeaponType();
 
-        // 1: check if two handed
-        if (rType >= RE::WeaponTypes::kTwoHandSword && rType <= RE::WeaponTypes::kTwoHandAxe) {
-            log::info("two handed weapon");
+        //just check if it's not a ranged weapon/staff
+        if (rType >= RE::WeaponTypes::kHandToHandMelee && rType <= RE::WeaponTypes::kTwoHandAxe) {
+            //log::info("two handed weapon");
             return true;
         }
-
-        // 2: if right hand isn't 1h and isn't 2h then we return false;
-        const bool validRight = (rType >= RE::WeaponTypes::kHandToHandMelee && rType <= RE::WeaponTypes::kOneHandMace);
-        if (!validRight) {
-            log::info("invalid right hand type");
-            return false;
-        }
-        // 3: now we always have a valid right hand weapon in this case
-        if (leftShield) {
-            log::info("shield equipped");
-            return true;
-        }
-
-        // now check left, make sure it's either unarmed or one handed
-        if (leftWeap) {
-            const auto lType = leftWeap->GetWeaponType();
-            if (lType >= RE::WeaponTypes::kHandToHandMelee && lType <= RE::WeaponTypes::kOneHandMace) {
-                log::info("valid right hand, valid left hand");
-                return true;
-            }
-        }
-        // at this point if there is no left weapon type then we know it's probably a spell in the left hand
         return false;
     }
 }

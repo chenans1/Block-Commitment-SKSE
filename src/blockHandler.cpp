@@ -17,7 +17,7 @@ namespace block {
         _blockKeyHeld = true;
         _pending.active = false;
         _pending.remaining = 0.0f;
-        log::info("block key held down");
+        if (settings::log()) log::info("[blockHandler]: left/block key pressed");
     }
         
     bool blockHandler::OnBlockUp(float heldDuration) { 
@@ -26,7 +26,7 @@ namespace block {
         if (heldDuration >= commit) {
             _pending.active = false;
             _pending.remaining = 0.0f;
-            log::info("OnBlockUp: Key held longer than commit, release");
+            if (settings::log()) log::info("[blockHandler] Key held longer than commit, release");
             return false;
         }
 
@@ -41,6 +41,7 @@ namespace block {
         //so set the remaining duration i think?
         _pending.active = true;
         _pending.remaining = (commit - heldDuration);
+        if (settings::log()) log::info("[blockHandler] left/block was not held long enough, pending remain={}", _pending.remaining);
         return true;
     }
 
@@ -59,7 +60,7 @@ namespace block {
         if (_blockKeyHeld) {
             return;
         }
-        //in this case it means the block key is no longer held and the commitment is long enough
+        //release was requested
         _releaseRequested = true;
         log::info("releaseRequest=true");
     }
