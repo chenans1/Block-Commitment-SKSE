@@ -81,8 +81,9 @@ namespace settings {
         c.log = ini_bool(ini, "general", "enableLog", c.log);
         c.leftAttack = ini_bool(ini, "general", "isLeftAttack", c.leftAttack);
         c.altBlockKey = static_cast<int>(ini.GetLongValue("general", "altBlockKey", c.altBlockKey));
-
-        log::info("Settings Loaded: commitDuration={}, isLeftAttack={}", c.commitDuration, c.leftAttack);
+        c.allowBlockDoubleBind = ini_bool(ini, "general", "allowBlockDoubleBind", c.allowBlockDoubleBind);
+        log::info("Settings Loaded: commitDuration={}, isLeftAttack={}, allowBlockDoubleBind={}", 
+            c.commitDuration, c.leftAttack, c.allowBlockDoubleBind);
     }
 
     void save() { 

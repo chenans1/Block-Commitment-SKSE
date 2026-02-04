@@ -6,6 +6,7 @@ namespace settings {
         float commitDuration = 0.3f;
         bool leftAttack = false;
         int altBlockKey = -1;
+        bool allowBlockDoubleBind = false;
 	};
 
 	config& Get();
@@ -14,11 +15,12 @@ namespace settings {
     inline float log() { return Get().log; }
     inline bool leftAttack() { return Get().leftAttack; }
     inline int getAltBlock() { return Get().altBlockKey; }
-	void load();
-    //skse menu stuff
+    inline int allowDoubleBind() { return Get().allowBlockDoubleBind; }
+
     void RegisterMenu();
     void __stdcall RenderMenuPage();
-    void save();
 
+	void load();
+    void save();
     int toKeyCode(const RE::ButtonEvent& event);
 }
