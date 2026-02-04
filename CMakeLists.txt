@@ -9,7 +9,8 @@ set(ENABLE_SKYRIM_VR OFF CACHE BOOL "" FORCE)
 # Set your project name. This will be the name of your SKSE .dll file.
 project(BlockOverhaul VERSION 0.0.1 LANGUAGES CXX)
 
-set(OUTPUT_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/output")
+# set(OUTPUT_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/output")
+set(OUTPUT_FOLDER "D:/Skyrim SE MO2/mods/block commitment")
 
 add_subdirectory(extern/CommonLibVR-ng)
 include(extern/CommonLibVR-ng/cmake/CommonLibSSE.cmake)
@@ -23,6 +24,12 @@ set(SOURCES
     src/ABHandler.cpp
     src/settings.h
     src/settings.cpp
+    src/utils.h
+    src/utils.cpp
+    src/blockHandler.h
+    src/blockHandler.cpp
+    src/updateHook.h
+    src/updateHook.cpp
 )
 
 add_commonlibsse_plugin(${PROJECT_NAME} SOURCES ${SOURCES}) # <--- specifies plugin.cpp

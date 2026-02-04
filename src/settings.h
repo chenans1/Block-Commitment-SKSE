@@ -8,7 +8,7 @@ namespace settings {
 
 	config& Get();
 
-	inline float getCommitmentDuration() { return Get().commitDuration; }
+	inline float getCommitDur() { return Get().commitDuration; }
     inline float log() { return Get().log; }
 	void load();
 }

@@ -2,6 +2,7 @@
 
 #include "ABHandler.h"
 #include "settings.h"
+#include "updateHook.h"
 
 #include <Windows.h>
 #include <spdlog/sinks/basic_file_sink.h>
@@ -46,6 +47,7 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse) {
     log::info("{} {} is loading...", plugin->GetName(), version);
     SKSE::Init(skse);
     ABHook::Install();
+    updateHook::PlayerUpdateHook::Install();
     settings::load();
     log::info("{} has finished loading.", plugin->GetName());
     return true;

@@ -4,4 +4,5 @@
 class ABHook {
     public:
         static void Install();
+        static void Check();
 };
