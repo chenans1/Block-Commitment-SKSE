@@ -34,7 +34,7 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
         } else if (ev->IsUp()) {
             const bool swallowed = bh->OnBlockUp(ev->HeldDuration());
             if (swallowed) {
-                log::info("swallowed!");
+                if (settings::log()) log::info("swallowed left release");
                 return;
             }
         }
@@ -64,9 +64,8 @@ static void InjectReleaseLeft() {
         return;
     }
     _ProcessButton(controls->attackBlockHandler, release, pdata);
-    //deallocate
     RE::free(release);
-    log::info("InjectedRelease");
+    if (settings::log())  log::info("[ABhook]: sucessfully injected release key");
     // send block stop and the key release
     pc->NotifyAnimationGraph("blockStop");
 }
@@ -74,11 +73,11 @@ static void InjectReleaseLeft() {
 void ABHook::Check() { 
     auto* bh = block::blockHandler::GetSingleton(); 
     if (bh->IsBlockHeld()) {
-        log::info("Check: blockKey is held");
+        if (settings::log()) log::info("Check: blockKey is held");
         return;
     }
     if (bh->consumeReleaseRequest()) {
-        log::info("inject release left");
+        if (settings::log()) log::info("Consumed Release Request");
         InjectReleaseLeft();
     }
 }
