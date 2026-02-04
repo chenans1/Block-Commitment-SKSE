@@ -48,6 +48,7 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse) {
     SKSE::Init(skse);
     ABHook::Install();
     updateHook::PlayerUpdateHook::Install();
+    settings::RegisterMenu();
     settings::load();
     log::info("{} has finished loading.", plugin->GetName());
     return true;
