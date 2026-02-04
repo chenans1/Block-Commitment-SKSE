@@ -21,6 +21,8 @@ namespace blockCommit {
             float blockDuration = 0.0f; //current block duration
         } _state{};
 
-
+        //input device stuff, cached for left release injection
+        RE::INPUT_DEVICE _device = RE::INPUT_DEVICE::kKeyboard;
+        std::uint32_t _idCode = 0;
     };
 }

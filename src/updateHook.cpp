@@ -19,8 +19,9 @@ namespace updateHook {
 
     void PlayerUpdateHook::Hook_Update(float a_delta) {
         _orig(this, a_delta);
-        block::blockHandler::GetSingleton()->Update(a_delta);
         blockCommit::Controller::GetSingleton()->Update(a_delta);
-        ABHook::Check();
+
+        /*block::blockHandler::GetSingleton()->Update(a_delta);
+        ABHook::Check();*/
     }
 }

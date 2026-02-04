@@ -3,6 +3,7 @@
 #include "settings.h"
 #include "blockHandler.h"
 #include "utils.h"
+#include "blockCommit.h"
 
 using namespace SKSE;
 using namespace SKSE::log;
@@ -28,13 +29,16 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
     if (ev->QUserEvent() == "Left Attack/Block") {
         g_blockDevice = ev->GetDevice();
         g_blockIDCode = ev->GetIDCode();
-        auto* bh = block::blockHandler::GetSingleton();
+        //auto* bh = block::blockHandler::GetSingleton();
+        auto* blockController = blockCommit::Controller::GetSingleton();
         if (ev->IsDown()) {
-            bh->OnBlockDown();
+            //bh->OnBlockDown();
+            blockController->beginLeftBlock();
         } else if (ev->IsUp()) {
-            const bool swallowed = bh->OnBlockUp(ev->HeldDuration());
+            /*const bool swallowed = bh->OnBlockUp(ev->HeldDuration());*/
+            const bool swallowed = blockController->wantReleaseLeftBlock();
             if (swallowed) {
-                if (settings::log()) log::info("swallowed left release");
+                if (settings::log()) log::info("[ABHook]: denied left release");
                 return;
             }
         }
@@ -67,7 +71,7 @@ static void InjectReleaseLeft() {
     RE::free(release);
     if (settings::log())  log::info("[ABhook]: sucessfully injected release key");
     // send block stop and the key release
-    pc->NotifyAnimationGraph("blockStop");
+    //pc->NotifyAnimationGraph("blockStop");
 }
 
 void ABHook::Check() { 

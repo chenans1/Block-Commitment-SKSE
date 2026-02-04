@@ -26,7 +26,7 @@ namespace block {
             float remaining = 0.0f;
         } _pending{};
 
-         RE::INPUT_DEVICE _device = RE::INPUT_DEVICE::kKeyboard;
+        RE::INPUT_DEVICE _device = RE::INPUT_DEVICE::kKeyboard;
         std::uint32_t _idCode = 0;
     };
 }
