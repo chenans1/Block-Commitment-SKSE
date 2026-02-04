@@ -33,7 +33,6 @@ namespace block {
         if (heldDuration >= commit) {
             _pending.active = false;
             _pending.remaining = 0.0f;
-            //_pending.gen = ++_gen;
             log::info("OnBlockUp: Key held longer than commit, release");
             return false;
         }
@@ -70,10 +69,6 @@ namespace block {
         //in this case it means the block key is no longer held and the commitment is long enough
         _releaseRequested = true;
         log::info("releaseRequest=true");
-        /*log::info("fire synthetic unlock input");
-        if (auto* pc = RE::PlayerCharacter::GetSingleton()) {
-            pc->NotifyAnimationGraph("blockStop");
-        }*/
     }
 
     bool blockHandler::consumeReleaseRequest() {

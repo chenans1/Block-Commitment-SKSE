@@ -20,6 +20,5 @@ namespace updateHook {
         _orig(this, a_delta);
         block::blockHandler::GetSingleton()->Update(a_delta);
         ABHook::Check();
-        log::trace("Hook_Update tick {}", a_delta);
     }
 }
