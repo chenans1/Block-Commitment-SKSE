@@ -8,7 +8,8 @@
 #include "settings.h"
 #include "updateHook.h"
 #include "altBlock.h"
-
+#include "utils.h"
+#include "bashHandler.h"
 
 using namespace SKSE;
 using namespace SKSE::log;
@@ -55,6 +56,9 @@ static void MessageHandler(SKSE::MessagingInterface::Message* msg) {
             return;
         }
         inputMgr->AddEventSink(&altBlock::AltBlockInputSink::GetSingleton());
+        utils::initKeyword();
+        /*utils::init();*/
+        //bash::bashController::GetSingleton()->init();
     }
 }
 

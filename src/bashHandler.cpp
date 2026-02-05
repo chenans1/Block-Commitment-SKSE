@@ -1,15 +1,20 @@
 #include "PCH.h"
 #include "bashHandler.h"
+#include "settings.h"
+
+using namespace SKSE;
+using namespace SKSE::log;
+using namespace SKSE::stl;
 
 namespace bash {
     // similar to OCPA - use the action left release
     void bashController::bashRelease(RE::Actor* a) {
         if (!actionBash) {
-            SKSE::log::error("Bash action not initialized!");
+            log::error("Bash action not initialized!");
             return;
         }
         if (!g_taskInterface) {
-            SKSE::log::error("Task interface not available!");
+            log::error("Task interface not available!");
             return;
         }
         g_taskInterface->AddTask([a]() {
@@ -22,22 +27,35 @@ namespace bash {
             bool success = func(data.get());
 
             if (settings::log()) {
-                SKSE::log::info("Bash trigger: {}", success ? "success" : "failed");
+                log::info("Bash trigger: {}", success ? "success" : "failed");
             }
         });
     }
 
+    void bashController::beginBash(RE::PlayerCharacter* player) {
+        if (player) {
+            auto* st = player->AsActorState();
+            if (st) {
+                // Set the attack state to bash
+                st->actorState1.meleeAttackState = RE::ATTACK_STATE_ENUM::kBash;
+                player->NotifyAnimationGraph("bashStart");
+                log::info("player forced bash attack");
+            }
+        }
+    }
+
     void bashController::init() {
-        //action bash is just the actionLeftRelease
+        //action bash is just the actionLeftRelease->so we use separate thing to start and then release bash
         actionBash = (RE::BGSAction*)RE::TESForm::LookupByID(0x13454);
         g_taskInterface = SKSE::GetTaskInterface();
-        log::info("bashstuff: init....");
+        //log::info("bashstuff: init....");
         if (!actionBash) {
-            SKSE::log::error("Failed to find bash action!");
+            log::error("Failed to find bash action!");
         }
         if (!g_taskInterface) {
-            SKSE::log::error("Failed to get task interface!");
+            log::error("Failed to get task interface!");
         }
+        log::info("sucessfully initialized bash controller");
     }
 
 	//literally just sets the timer delay and starts bash anim

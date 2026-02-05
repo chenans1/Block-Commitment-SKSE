@@ -18,7 +18,7 @@ namespace utils {
         auto* p = g_deltaTimeRealTime.get();
         return p ? *p : 0.0f;
     }
-
+    bool hasTelescopeKeyword(const RE::TESObjectARMO* shield);
     bool isLeftKeyBlock(RE::PlayerCharacter* player);
     //borderline just the same function with less restrictions, will be expanded to include magic blocking later.
     bool canAltBlock(RE::PlayerCharacter* player);
@@ -27,11 +27,7 @@ namespace utils {
     bool isPlayerAttacking(RE::PlayerCharacter* player);
     bool resolveBlockCancel(RE::PlayerCharacter* player);
 
-    void forceBashAttack(RE::PlayerCharacter* player);
-
-    void init();
-    void PerformBash(RE::Actor* actor);
-
+    void initKeyword();
     //for somnium check for:
     //apo_key_telescope
 }

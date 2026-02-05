@@ -2,8 +2,8 @@
 
 #include "updateHook.h"
 #include "ABhandler.h"
-#include "blockHandler.h"
 #include "blockCommit.h"
+#include "bashHandler.h"
 
 using namespace SKSE;
 using namespace SKSE::log;
@@ -20,7 +20,7 @@ namespace updateHook {
     void PlayerUpdateHook::Hook_Update(float a_delta) {
         _orig(this, a_delta);
         blockCommit::Controller::GetSingleton()->Update(a_delta);
-
+        //bash::bashController::GetSingleton()->update(a_delta);
         /*block::blockHandler::GetSingleton()->Update(a_delta);
         ABHook::Check();*/
     }

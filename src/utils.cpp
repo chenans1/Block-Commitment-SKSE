@@ -7,8 +7,34 @@ using namespace SKSE::log;
 using namespace SKSE::stl;
 
 namespace utils {
-    // check for equip. Assume mco-style left clicks
-    // thus if left hand is weapon, yes, also useful as a check for 1h+spell
+    inline RE::BGSKeyword* telescopeKYWD = nullptr;
+    inline std::atomic_bool kywdCache{false};
+
+    void initKeyword() { 
+        bool expected = false;
+        if (!kywdCache.compare_exchange_strong(expected, true)) {
+            return;
+        }
+        auto* form = RE::TESForm::LookupByEditorID("apo_key_telescope");
+        telescopeKYWD = form ? form->As<RE::BGSKeyword>() : nullptr;
+        if (telescopeKYWD) {
+            SKSE::log::info("[utils] Cached keyword apo_key_telescope ({:08X})", telescopeKYWD->GetFormID());
+        } else {
+            SKSE::log::info("[utils] Keyword apo_key_telescope not found (non-Enderal install?)");
+        }
+    }
+
+    bool hasTelescopeKeyword(const RE::TESObjectARMO* shield) {
+        if (!shield) {
+            return false;
+        }
+        if (!kywdCache.load(std::memory_order_acquire) || !telescopeKYWD) {
+            return false;
+        }
+
+        return shield->HasKeyword(telescopeKYWD);
+    }
+
     bool isLeftKeyBlock(RE::PlayerCharacter* player) {
         if (!player) return false;
         const auto* rightForm = player->GetEquippedObject(false);
@@ -17,15 +43,19 @@ namespace utils {
         const auto* leftWeap = leftForm ? leftForm->As<RE::TESObjectWEAP>() : nullptr;
         const auto* leftShield = leftForm ? leftForm->As<RE::TESObjectARMO>() : nullptr;
 
-        //shield: always can block
+        // shield: always can block
         if (leftShield) {
             // log::info("shield equipped");
+            if (hasTelescopeKeyword(leftShield)) {
+                log::info("shield has telescope keyword");
+                return false;
+            }
             return true;
         }
 
         // you can't block without a weapon in the right hand
         if (!rightWeap) {
-            //log::info("no right handed weapon");
+            // log::info("no right handed weapon");
             return false;
         }
 
@@ -33,28 +63,27 @@ namespace utils {
 
         // 1: check if two handed
         if (rType >= RE::WeaponTypes::kTwoHandSword && rType <= RE::WeaponTypes::kTwoHandAxe) {
-            //log::info("two handed weapon");
+            // log::info("two handed weapon");
             return true;
         }
 
         // 2: if right hand isn't 1h and isn't 2h then we return false;
         const bool validRight = (rType >= RE::WeaponTypes::kHandToHandMelee && rType <= RE::WeaponTypes::kOneHandMace);
         if (!validRight) {
-            //log::info("invalid right hand type");
+            // log::info("invalid right hand type");
             return false;
         }
-        
 
         // now check left, make sure it's either unarmed or one handed
         if (leftWeap) {
             const auto lType = leftWeap->GetWeaponType();
             // if left = attack and right hand is 1h weapon then left hand must be empty
             if (settings::leftAttack() && lType != RE::WeaponTypes::kHandToHandMelee) {
-                //log::info("left = attack, left hand is not unarmed/shield");
+                // log::info("left = attack, left hand is not unarmed/shield");
                 return false;
             }
             if (lType >= RE::WeaponTypes::kHandToHandMelee && lType <= RE::WeaponTypes::kOneHandMace) {
-                //log::info("valid right hand, valid left hand");
+                // log::info("valid right hand, valid left hand");
                 return true;
             }
         }
@@ -73,6 +102,10 @@ namespace utils {
 
         //if you have left shield always can block, but you don't need alt block key in this case so uhhh?
         if (leftShield) {
+            if (hasTelescopeKeyword(leftShield)) {
+                log::info("shield has telescope keyword");
+                return false;  // telescope shields CANNOT alt-block
+            }
             // log::info("shield equipped");
             return true;
         }
@@ -137,59 +170,5 @@ namespace utils {
         }
 
         return false;
-    }
-
-    //forcefully bashes
-    void forceBashAttack(RE::PlayerCharacter* player) {
-        if (player) {
-            auto* st = player->AsActorState();
-            if (st) {
-                // Set the attack state to bash
-                st->actorState1.meleeAttackState = RE::ATTACK_STATE_ENUM::kBash;
-                player->NotifyAnimationGraph("bashStart");
-                log::info("player forced bash attack");
-            }
-        }
-    }
-
-    static RE::BGSAction* actionBash = nullptr;
-    static const SKSE::TaskInterface* g_taskInterface = nullptr;
-
-    //gonna try to force bash, then do bash release action?
-    void init() {
-        actionBash = (RE::BGSAction*)RE::TESForm::LookupByID(0x13454);
-        g_taskInterface = SKSE::GetTaskInterface();
-        log::info("bashstuff: init....");
-        if (!actionBash) {
-            SKSE::log::error("Failed to find bash action!");
-        }
-        if (!g_taskInterface) {
-            SKSE::log::error("Failed to get task interface!");
-        }
-    }
-
-    //similar to OCPA - gonna do some replace l with bash trickery
-    void PerformBash(RE::Actor* a) {
-        if (!actionBash) {
-            SKSE::log::error("Bash action not initialized!");
-            return;
-        }
-        if (!g_taskInterface) {
-            SKSE::log::error("Task interface not available!");
-            return;
-        }
-        g_taskInterface->AddTask([a]() {
-            std::unique_ptr<RE::TESActionData> data(RE::TESActionData::Create());
-            data->source = RE::NiPointer<RE::TESObjectREFR>(a);
-            data->action = actionBash;
-
-            typedef bool func_t(RE::TESActionData*);
-            REL::Relocation<func_t> func{RELOCATION_ID(40551, 41557)};
-            bool success = func(data.get());
-
-            if (settings::log()) {
-                SKSE::log::info("Bash trigger: {}", success ? "success" : "failed");
-            }
-        });
     }
 }

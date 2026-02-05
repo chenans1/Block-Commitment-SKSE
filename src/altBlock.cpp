@@ -116,9 +116,13 @@ namespace altBlock {
                     if (settings::log()) SKSE::log::info("Mod={} not held, no block", modifierKey);
                     return RE::BSEventNotifyControl::kContinue;
                 }
-                utils::resolveBlockCancel(player);
-                StartBlock(player, st, isBlocking);
-                blockController->beginAltBlock();
+                //utils::resolveBlockCancel(player);
+                //StartBlock(player, st, isBlocking);
+                st->actorState2.wantBlocking = 1;
+                if (!isBlocking) {
+                    player->NotifyAnimationGraph("blockStart");
+                    blockController->beginAltBlock();
+                }
             } else if (btn->IsUp()) {
                 blockController->wantReleaseAltBlock();
             }

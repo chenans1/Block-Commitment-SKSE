@@ -10,16 +10,17 @@ namespace bash {
         void start(float delay, RE::PlayerCharacter* player);
         void update(float a_delta);
         void init();
+        void bashRelease(RE::Actor* a);
+        void beginBash(RE::PlayerCharacter* player);
+
     private:
         bashController() = default;
 
         struct State {
-            duration = 0.0f;
+            float duration = 0.0f;
             bool isBashing = false;
         } _state{};
-
-        void bashRelease(RE::Actor* a);
-        static RE::BGSAction* actionBash = nullptr;
-        static const SKSE::TaskInterface* g_taskInterface = nullptr;
+        static inline RE::BGSAction* actionBash;
+        const SKSE::TaskInterface* g_taskInterface = nullptr;
     };
 }
