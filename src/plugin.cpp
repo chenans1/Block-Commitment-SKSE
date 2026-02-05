@@ -10,6 +10,7 @@
 #include "altBlock.h"
 #include "utils.h"
 #include "bashHandler.h"
+#include "AnimEventSink.h"
 
 using namespace SKSE;
 using namespace SKSE::log;
@@ -44,21 +45,48 @@ namespace {
     }
 }
 
+//static void MessageHandler(SKSE::MessagingInterface::Message* msg) {
+//    if (!msg) {
+//        return;
+//    }
+//
+//    if (msg->type == SKSE::MessagingInterface::kDataLoaded) {
+//        auto* inputMgr = RE::BSInputDeviceManager::GetSingleton();
+//        if (!inputMgr) {
+//            log::warn("BSInputDeviceManager Not Available");
+//            return;
+//        }
+//        inputMgr->AddEventSink(&altBlock::AltBlockInputSink::GetSingleton());
+//        utils::initKeyword();
+//
+//    }
+//}
+
 static void MessageHandler(SKSE::MessagingInterface::Message* msg) {
     if (!msg) {
         return;
     }
-
-    if (msg->type == SKSE::MessagingInterface::kDataLoaded) {
-        auto* inputMgr = RE::BSInputDeviceManager::GetSingleton();
-        if (!inputMgr) {
-            log::warn("BSInputDeviceManager Not Available");
-            return;
+    switch (msg->type) {
+        case SKSE::MessagingInterface::kDataLoaded: {
+            auto* inputMgr = RE::BSInputDeviceManager::GetSingleton();
+            if (!inputMgr) {
+                log::warn("BSInputDeviceManager Not Available");
+                return;
+            }
+            inputMgr->AddEventSink(&altBlock::AltBlockInputSink::GetSingleton());
+            utils::initKeyword();
+            utils::init();
+            break;
         }
-        inputMgr->AddEventSink(&altBlock::AltBlockInputSink::GetSingleton());
-        utils::initKeyword();
-        /*utils::init();*/
-        //bash::bashController::GetSingleton()->init();
+        case SKSE::MessagingInterface::kPostLoadGame: {
+            if (auto* pc = RE::PlayerCharacter::GetSingleton()) {
+                pc->AddAnimationGraphEventSink(&block::AnimEventSink::GetSingleton());
+                log::info("registered anim event sink");
+            }
+            break;
+        }
+        default:
+            break;
     }
 }
 

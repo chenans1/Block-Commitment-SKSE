@@ -214,8 +214,8 @@ namespace settings {
 
         // block cancelling stuff
         ImGuiMCP::Separator();
-        ImGuiMCP::Checkbox("Allow Block Cancel?", &c.enableBlockCancel);
-        ImGuiMCP::Checkbox("Allow Block Cancel During MCO_Recovery?", &c.allowMCORecovery);
+        ImGuiMCP::Checkbox("Enable Block Cancelling Stamina Cost?", &c.enableBlockCancel);
+        ImGuiMCP::Checkbox("No Stamina Cost During MCO_Recovery?", &c.allowMCORecovery);
         ImGuiMCP::DragFloat("Block Cancel Cost", &c.blockCancelCost, 1.0f, 0.0f, 50.0f, "%.2f");
 
         //ImGuiMCP::Checkbox("Replace left block with Bash?", &c.replaceLeftBlockWithBash);

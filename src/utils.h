@@ -28,6 +28,13 @@ namespace utils {
     bool resolveBlockCancel(RE::PlayerCharacter* player);
 
     void initKeyword();
+    void init();
+
+    bool tryIdle(RE::TESIdleForm* idle, RE::Actor* actor, RE::DEFAULT_OBJECT action = RE::DEFAULT_OBJECT::kActionIdle,RE::Actor* target = nullptr);
+    
+    bool tryBlockIdle(RE::PlayerCharacter* pc);
+
+    bool isPlayerBlocking();
     //for somnium check for:
     //apo_key_telescope
 }

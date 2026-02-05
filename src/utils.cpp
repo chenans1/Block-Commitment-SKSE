@@ -9,7 +9,7 @@ using namespace SKSE::stl;
 namespace utils {
     inline RE::BGSKeyword* telescopeKYWD = nullptr;
     inline std::atomic_bool kywdCache{false};
-
+    inline RE::TESIdleForm* blockingStartIdle;
     void initKeyword() { 
         bool expected = false;
         if (!kywdCache.compare_exchange_strong(expected, true)) {
@@ -20,7 +20,16 @@ namespace utils {
         if (telescopeKYWD) {
             SKSE::log::info("[utils] Cached keyword apo_key_telescope ({:08X})", telescopeKYWD->GetFormID());
         } else {
-            SKSE::log::info("[utils] Keyword apo_key_telescope not found (non-Enderal install?)");
+            SKSE::log::info("[utils] Keyword apo_key_telescope not found");
+        }
+    }
+
+    void init() {
+        blockingStartIdle = RE::TESDataHandler::GetSingleton()->LookupForm<RE::TESIdleForm>(0x00013217, "Skyrim.esm");
+        if (blockingStartIdle) {
+            SKSE::log::info("[utils] Cached blockingStart ({:08X})", blockingStartIdle->GetFormID());
+        } else {
+            SKSE::log::info("[utils] failed to find blockingStart");
         }
     }
 
@@ -170,5 +179,53 @@ namespace utils {
         }
 
         return false;
+    }
+
+    //dont ask me wtf this is lmao
+    //adapted from: https://github.com/jarari/DynamicKeyActionFramework
+    bool tryIdle(RE::TESIdleForm* idle, RE::Actor* actor, RE::DEFAULT_OBJECT action = RE::DEFAULT_OBJECT::kActionIdle,
+        RE::Actor* target = nullptr) {
+        if (!idle || !actor) {
+            return false;
+        }
+
+        auto* proc = actor->GetActorRuntimeData().currentProcess;
+        if (!proc) {
+            return false;
+        }
+
+        using func_t =
+            bool (*)(RE::AIProcess*, RE::Actor*, RE::DEFAULT_OBJECT, RE::TESIdleForm*, bool, bool, RE::Actor*);
+        static REL::Relocation<func_t> func{RELOCATION_ID(38290, 39256)};
+
+        return func(proc, actor, action, idle, true, true, target);
+    }
+
+    bool tryBlockIdle(RE::PlayerCharacter* pc) {
+        if (!pc || !blockingStartIdle) {
+            return false;
+        }
+        return tryIdle(blockingStartIdle, pc);
+    }
+
+    //prioritize false, for more permissive release and stop blocking i think
+    bool isPlayerBlocking() {
+        auto* player = RE::PlayerCharacter::GetSingleton();
+        if (!player) {
+            return false;
+        }
+
+        const bool stateSaysBlocking = player->IsBlocking();
+
+        bool graphSaysBlocking = true;
+        bool gotGraph = player->GetGraphVariableBool("IsBlocking", graphSaysBlocking);
+
+        if (!stateSaysBlocking) {
+            return false;
+        }
+        if (gotGraph && !graphSaysBlocking) {
+            return false;
+        }
+        return true;
     }
 }

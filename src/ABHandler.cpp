@@ -23,17 +23,18 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
     }
     //if it's not a valid equip combo -> return
     auto* pc = RE::PlayerCharacter::GetSingleton();
-    if (!pc || !utils::isLeftKeyBlock(pc)) {
+    if (!pc) {
         return _ProcessButton(self, ev, data);
     }
     if (ev->QUserEvent() == "Left Attack/Block") {
         g_blockDevice = ev->GetDevice();
         g_blockIDCode = ev->GetIDCode();
         auto* blockController = blockCommit::Controller::GetSingleton();
-        if (ev->IsDown()) {
-            utils::isPlayerAttacking(pc);
-            blockController->beginLeftBlock();
-        } else if (ev->IsUp()) {
+        //if (ev->IsDown()) {
+        //    //utils::isPlayerAttacking(pc);
+        //    //blockController->beginLeftBlock();
+        //} else 
+        if (ev->IsUp()) {
             const bool swallowed = blockController->wantReleaseLeftBlock();
             if (swallowed) {
                 if (settings::log()) log::info("[ABHook]: denied left release");

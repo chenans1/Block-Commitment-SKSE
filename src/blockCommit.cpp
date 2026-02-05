@@ -3,11 +3,13 @@
 #include "blockCommit.h"
 #include "altBlock.h"
 #include "settings.h"
+#include "utils.h"
 
 namespace blockCommit {
     void Controller::stopBlocking() {
         _state.wantStop = false;
         _state.blockDuration = 0.0f;
+        _state.isBlocking = false;
         auto* player = RE::PlayerCharacter::GetSingleton();
         if (!player) {
             return;
@@ -28,6 +30,16 @@ namespace blockCommit {
         if (settings::log()) SKSE::log::info("[blockCommit]: beginAltBlock");
         _state.altBlockMode = true;
         _state.wantStop = false;
+        _state.isBlocking = true;
+        _state.blockDuration = 0.0f;
+    }
+    // use pending altblock mode to prevent mixing up block input
+    // fetch the input key types here
+    void Controller::beginLeftBlock() {
+        if (settings::log()) SKSE::log::info("[blockCommit]: beginLeftBlock");
+        _state.altBlockMode = false;
+        _state.wantStop = false;
+        _state.isBlocking = true;
         _state.blockDuration = 0.0f;
     }
 
@@ -36,6 +48,7 @@ namespace blockCommit {
             if (settings::log()) {
                 SKSE::log::info("[wantReleaseAltBlock] allow release: block duration={}", _state.blockDuration);
             }
+            _state.isBlocking = false;
             stopBlocking();
             return;
         }
@@ -46,22 +59,22 @@ namespace blockCommit {
         }
 	}
 
-    //use pending altblock mode to prevent mixing up block input
-    //fetch the input key types here
-    void Controller::beginLeftBlock() {
-        if (settings::log()) SKSE::log::info("[blockCommit]: beginLeftBlock");
-        _state.altBlockMode = false;
-        _state.wantStop = false;
-        _state.blockDuration = 0.0f;
-    }
-
     //returns true/false to decide if we swallow input
     bool Controller::wantReleaseLeftBlock() { 
         //check blockduration >= blockcommit. if true reset state machine and continue
+        if (!utils::isPlayerBlocking()) {
+            if (settings::log()) {
+                SKSE::log::info("[wantReleaseLeftBlock] player already not blocking");
+            }
+            _state.isBlocking = false;
+            _state.blockDuration = 0.0f;
+            return false;
+        }
         if (_state.blockDuration >= settings::getCommitDur()) {
             if (settings::log()) {
                 SKSE::log::info("[wantReleaseLeftBlock] allow release: block duration={}", _state.blockDuration);
             }
+            _state.isBlocking = false;
             _state.blockDuration = 0.0f;
             return false;
         }
@@ -87,6 +100,7 @@ namespace blockCommit {
         // if true allow unblock, if not do nothing
         if (_state.blockDuration >= settings::getCommitDur()) {
             _state.wantStop = false;
+            _state.isBlocking = false;
             stopBlocking();
             return;
         }

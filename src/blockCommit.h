@@ -22,6 +22,7 @@ namespace blockCommit {
             bool altBlockMode = false; //whether we are alt blocking or left block
             bool wantStop = false; //whether we want to stop blocking or not
             float blockDuration = 0.0f; //current block duration
+            bool isBlocking = false;
         } _state{};
 
         //input device stuff, cached for left release injection

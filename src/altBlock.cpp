@@ -51,7 +51,7 @@ namespace altBlock {
         const int modifierKey = settings::getModifierKey();
         return (modifierKey > 0 && modifierKey < 300);
     }
-
+    
     RE::BSEventNotifyControl AltBlockInputSink::ProcessEvent(
         RE::InputEvent* const* a_events, RE::BSTEventSource<RE::InputEvent*>*) {
         if (!a_events) {
@@ -66,9 +66,12 @@ namespace altBlock {
         if (!player) {
             return RE::BSEventNotifyControl::kContinue;
         }
-        if (!validPlayerState(player) || !utils::canAltBlock(player)) {
+        if (!validPlayerState(player)) {
             return RE::BSEventNotifyControl::kContinue;
         }
+        /*if (!utils::canAltBlock(player)) {
+            return RE::BSEventNotifyControl::kContin        ue;
+        }*/
         //disable the altblock if you don't need it to block
         if (settings::isDoubleBindDisabled() && utils::isLeftKeyBlock(player)) {
             if (settings::log()) SKSE::log::info("left key is block, no double binds - alt block denied");
@@ -118,11 +121,15 @@ namespace altBlock {
                 }
                 //utils::resolveBlockCancel(player);
                 //StartBlock(player, st, isBlocking);
-                st->actorState2.wantBlocking = 1;
-                if (!isBlocking) {
-                    player->NotifyAnimationGraph("blockStart");
-                    blockController->beginAltBlock();
+                
+                if (utils::tryBlockIdle(player)) {
+                    SKSE::log::info("tryBlockIdle Worked");
                 }
+                //st->actorState2.wantBlocking = 1;
+                //if (!isBlocking) {
+                //    player->NotifyAnimationGraph("blockStart");
+                //    //blockController->beginAltBlock();
+                //}
             } else if (btn->IsUp()) {
                 blockController->wantReleaseAltBlock();
             }

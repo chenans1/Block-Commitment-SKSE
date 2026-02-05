@@ -34,6 +34,7 @@ set(SOURCES
     src/altBlock.cpp
     src/blockCommit.h
     src/blockCommit.cpp
+    src/AnimEventSink.h
 )
 
 add_commonlibsse_plugin(${PROJECT_NAME} SOURCES ${SOURCES}) # <--- specifies plugin.cpp
