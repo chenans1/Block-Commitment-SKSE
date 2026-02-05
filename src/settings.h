@@ -11,6 +11,7 @@ namespace settings {
         bool enableBlockCancel = true;
         float blockCancelCost = 10.0f;
         bool allowMCORecovery = true;
+        bool replaceLeftBlockWithBash = true;
 	};
 
 	config& Get();
@@ -24,7 +25,7 @@ namespace settings {
     inline bool isBlockCancelEnabled() { return Get().enableBlockCancel; }
     inline float blockCancelCost() { return Get().blockCancelCost; }
     inline bool allowMCORecovery() { return Get().allowMCORecovery; }
-
+    inline int replaceLeftWBash() { return Get().replaceLeftBlockWithBash; }
     void RegisterMenu();
     void __stdcall RenderMenuPage();
 

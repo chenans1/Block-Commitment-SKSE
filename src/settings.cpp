@@ -128,6 +128,7 @@ namespace settings {
         c.blockCancelCost = ini_float(ini, "general", "blockCancelCost", c.blockCancelCost);
         c.enableBlockCancel = ini_bool(ini, "general", "enableBlockCancel", c.enableBlockCancel);
         c.allowMCORecovery = ini_bool(ini, "general", "allowMCORecovery", c.allowMCORecovery);
+        c.replaceLeftBlockWithBash = ini_bool(ini, "general", "replaceLeftBlockWithBash", c.replaceLeftBlockWithBash);
 
         log::info("Settings Loaded: commitDuration={}, isLeftAttack={}, allowBlockDoubleBind={}", 
             c.commitDuration, c.leftAttack, c.isDoubleBindDisabled);
@@ -151,6 +152,8 @@ namespace settings {
         ini.SetDoubleValue("general", "blockCancelCost", static_cast<double>(c.blockCancelCost), "%.3f");
         ini.SetLongValue("general", "enableBlockCancel", c.enableBlockCancel ? 1 : 0);
         ini.SetLongValue("general", "allowMCORecovery", c.allowMCORecovery ? 1 : 0);
+        ini.SetLongValue("general", "replaceLeftBlockWithBash", c.replaceLeftBlockWithBash ? 1 : 0);
+
 
         const SI_Error rc = ini.SaveFile(path);
         if (rc < 0) {
@@ -214,6 +217,8 @@ namespace settings {
         ImGuiMCP::Checkbox("Allow Block Cancel?", &c.enableBlockCancel);
         ImGuiMCP::Checkbox("Allow Block Cancel During MCO_Recovery?", &c.allowMCORecovery);
         ImGuiMCP::DragFloat("Block Cancel Cost", &c.blockCancelCost, 1.0f, 0.0f, 50.0f, "%.2f");
+
+        ImGuiMCP::Checkbox("Replace left block with Bash?", &c.replaceLeftBlockWithBash);
 
         ImGuiMCP::Separator();
         ImGuiMCP::Checkbox("Enable Log", &c.log);

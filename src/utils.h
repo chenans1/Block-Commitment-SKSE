@@ -26,4 +26,12 @@ namespace utils {
     //check if player attacking test
     bool isPlayerAttacking(RE::PlayerCharacter* player);
     bool resolveBlockCancel(RE::PlayerCharacter* player);
+
+    void forceBashAttack(RE::PlayerCharacter* player);
+
+    void init();
+    void PerformBash(RE::Actor* actor);
+
+    //for somnium check for:
+    //apo_key_telescope
 }

@@ -136,5 +136,60 @@ namespace utils {
             return true;
         }
 
+        return false;
+    }
+
+    //forcefully bashes
+    void forceBashAttack(RE::PlayerCharacter* player) {
+        if (player) {
+            auto* st = player->AsActorState();
+            if (st) {
+                // Set the attack state to bash
+                st->actorState1.meleeAttackState = RE::ATTACK_STATE_ENUM::kBash;
+                player->NotifyAnimationGraph("bashStart");
+                log::info("player forced bash attack");
+            }
+        }
+    }
+
+    static RE::BGSAction* actionBash = nullptr;
+    static const SKSE::TaskInterface* g_taskInterface = nullptr;
+
+    //gonna try to force bash, then do bash release action?
+    void init() {
+        actionBash = (RE::BGSAction*)RE::TESForm::LookupByID(0x13454);
+        g_taskInterface = SKSE::GetTaskInterface();
+        log::info("bashstuff: init....");
+        if (!actionBash) {
+            SKSE::log::error("Failed to find bash action!");
+        }
+        if (!g_taskInterface) {
+            SKSE::log::error("Failed to get task interface!");
+        }
+    }
+
+    //similar to OCPA - gonna do some replace l with bash trickery
+    void PerformBash(RE::Actor* a) {
+        if (!actionBash) {
+            SKSE::log::error("Bash action not initialized!");
+            return;
+        }
+        if (!g_taskInterface) {
+            SKSE::log::error("Task interface not available!");
+            return;
+        }
+        g_taskInterface->AddTask([a]() {
+            std::unique_ptr<RE::TESActionData> data(RE::TESActionData::Create());
+            data->source = RE::NiPointer<RE::TESObjectREFR>(a);
+            data->action = actionBash;
+
+            typedef bool func_t(RE::TESActionData*);
+            REL::Relocation<func_t> func{RELOCATION_ID(40551, 41557)};
+            bool success = func(data.get());
+
+            if (settings::log()) {
+                SKSE::log::info("Bash trigger: {}", success ? "success" : "failed");
+            }
+        });
     }
 }

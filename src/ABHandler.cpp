@@ -31,20 +31,28 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
         g_blockIDCode = ev->GetIDCode();
         auto* blockController = blockCommit::Controller::GetSingleton();
         if (ev->IsDown()) {
-            utils::isPlayerAttacking(pc);
-            blockController->beginLeftBlock();
-        } else if (ev->IsUp()) {
-            /*const bool swallowed = bh->OnBlockUp(ev->HeldDuration());*/
-            const bool swallowed = blockController->wantReleaseLeftBlock();
-            if (swallowed) {
-                if (settings::log()) log::info("[ABHook]: denied left release");
-                return;
+            if (!settings::replaceLeftWBash()) {
+                utils::isPlayerAttacking(pc);
+                blockController->beginLeftBlock();
+            } else {
+                utils::forceBashAttack(pc);
+                utils::PerformBash(pc);
             }
+            
+        } else if (ev->IsUp()) {
+            if (!settings::replaceLeftWBash()) {
+                const bool swallowed = blockController->wantReleaseLeftBlock();
+                if (swallowed) {
+                    if (settings::log()) log::info("[ABHook]: denied left release");
+                    return;
+                }
+            }
+            
         }
     }
     return _ProcessButton(self, ev, data);
 }
-
+//apo_key_telescope
 static void InjectReleaseLeft() {
     if (!_ProcessButton) {
         return;
