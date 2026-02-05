@@ -7,7 +7,7 @@
 //largely adapted from Dual Wield Parrying SKSE
 //https://github.com/DennisSoemers/DualWieldParryingSKSE/blob/main/src/InputEventHandler.cpp
 
-bool isUIClosed(RE::UI* ui) { 
+static bool isUIClosed(RE::UI* ui) { 
     if (ui && !ui->GameIsPaused() && !ui->IsApplicationMenuOpen() && !ui->IsItemMenuOpen() 
         && !ui->IsMenuOpen(RE::InterfaceStrings::GetSingleton()->dialogueMenu)) {
         return true;
@@ -15,7 +15,7 @@ bool isUIClosed(RE::UI* ui) {
     return false;
 }
 
-bool validPlayerState(RE::PlayerCharacter* player) {
+static bool validPlayerState(RE::PlayerCharacter* player) {
     auto playerAI = player->GetActorRuntimeData().currentProcess;
     const auto playerState = player->AsActorState();
     if (playerState && playerState->GetWeaponState() == RE::WEAPON_STATE::kDrawn &&
@@ -27,7 +27,7 @@ bool validPlayerState(RE::PlayerCharacter* player) {
     return false;
 }
 
-bool areControlsEnabled() {
+static bool areControlsEnabled() {
     const auto controlMap = RE::ControlMap::GetSingleton();
     const auto playerControls = RE::PlayerControls::GetSingleton();
     if (controlMap->IsFightingControlsEnabled() && playerControls->attackBlockHandler->inputEventHandlingEnabled) {
@@ -37,12 +37,19 @@ bool areControlsEnabled() {
 }
 
 namespace altBlock {
+    static bool modifierKeyHeld = false;
+
     //start set the want block flag, if not already blocking we start the block
     static void StartBlock(RE::PlayerCharacter* player, RE::ActorState* st, bool isBlocking) {
         st->actorState2.wantBlocking = 1;
         if (!isBlocking) {
             player->NotifyAnimationGraph("blockStart");
         }
+    }
+
+    static bool isModRequired() { 
+        const int modifierKey = settings::getModifierKey();
+        return (modifierKey > 0 && modifierKey < 300);
     }
 
     RE::BSEventNotifyControl AltBlockInputSink::ProcessEvent(
@@ -71,16 +78,30 @@ namespace altBlock {
         if (bind <= 0) {
             return RE::BSEventNotifyControl::kContinue;
         }
+        const int modifierKey = settings::getModifierKey();
+        const bool needsModifier = isModRequired();
+
         //afaik this is a linkedlist so we gotta traverse and check
         for (auto ev = *a_events; ev != nullptr; ev = ev->next) {
             auto* btn = ev->AsButtonEvent();
             if (!btn) continue;
 
             const int macro = settings::toKeyCode(*btn);
+
+            //check if it's mod key
+            if (needsModifier && macro == modifierKey) {
+                if (btn->IsDown() || btn->IsHeld()) {
+                    if (settings::log()) SKSE::log::info("Mod={} held", modifierKey);
+                    modifierKeyHeld = true;
+                } else if (btn->IsUp()) {
+                    if (settings::log()) SKSE::log::info("Mod={} released", modifierKey);
+                    modifierKeyHeld = false;
+                }
+            }
+
             if (macro != bind) continue;
             
             //if not blocking, then start blocking
-            // if fail to fetch the variables dont process
             bool isBlocking = false;
             if (!player->GetGraphVariableBool("IsBlocking", isBlocking)) {
                 return RE::BSEventNotifyControl::kContinue;
@@ -91,6 +112,11 @@ namespace altBlock {
             auto* blockController = blockCommit::Controller::GetSingleton();
            
             if (btn->IsDown()) {
+                if (needsModifier && !modifierKeyHeld) {
+                    if (settings::log()) SKSE::log::info("Mod={} not held, no block", modifierKey);
+                    return RE::BSEventNotifyControl::kContinue;
+                }
+                utils::resolveBlockCancel(player);
                 StartBlock(player, st, isBlocking);
                 blockController->beginAltBlock();
             } else if (btn->IsUp()) {

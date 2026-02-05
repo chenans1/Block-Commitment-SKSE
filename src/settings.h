@@ -3,11 +3,14 @@
 namespace settings {
 	struct config {
         bool log = false;
-        float commitDuration = 0.3f;
+        float commitDuration = 0.5f;
         bool leftAttack = false;
         int altBlockKey = -1;
         int modifierKey = -1;
         bool isDoubleBindDisabled = false;
+        bool enableBlockCancel = true;
+        float blockCancelCost = 10.0f;
+        bool allowMCORecovery = true;
 	};
 
 	config& Get();
@@ -18,6 +21,9 @@ namespace settings {
     inline int getAltBlock() { return Get().altBlockKey; }
     inline int getModifierKey() { return Get().modifierKey; }
     inline int isDoubleBindDisabled() { return Get().isDoubleBindDisabled; }
+    inline bool isBlockCancelEnabled() { return Get().enableBlockCancel; }
+    inline float blockCancelCost() { return Get().blockCancelCost; }
+    inline bool allowMCORecovery() { return Get().allowMCORecovery; }
 
     void RegisterMenu();
     void __stdcall RenderMenuPage();

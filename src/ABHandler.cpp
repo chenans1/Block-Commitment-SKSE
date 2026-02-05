@@ -29,10 +29,9 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
     if (ev->QUserEvent() == "Left Attack/Block") {
         g_blockDevice = ev->GetDevice();
         g_blockIDCode = ev->GetIDCode();
-        //auto* bh = block::blockHandler::GetSingleton();
         auto* blockController = blockCommit::Controller::GetSingleton();
         if (ev->IsDown()) {
-            //bh->OnBlockDown();
+            utils::isPlayerAttacking(pc);
             blockController->beginLeftBlock();
         } else if (ev->IsUp()) {
             /*const bool swallowed = bh->OnBlockUp(ev->HeldDuration());*/

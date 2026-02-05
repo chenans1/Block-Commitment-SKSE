@@ -22,4 +22,8 @@ namespace utils {
     bool isLeftKeyBlock(RE::PlayerCharacter* player);
     //borderline just the same function with less restrictions, will be expanded to include magic blocking later.
     bool canAltBlock(RE::PlayerCharacter* player);
+
+    //check if player attacking test
+    bool isPlayerAttacking(RE::PlayerCharacter* player);
+    bool resolveBlockCancel(RE::PlayerCharacter* player);
 }

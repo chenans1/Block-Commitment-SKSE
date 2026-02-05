@@ -125,6 +125,9 @@ namespace settings {
         c.altBlockKey = static_cast<int>(ini.GetLongValue("general", "altBlockKey", c.altBlockKey));
         c.modifierKey = static_cast<int>(ini.GetLongValue("general", "modifierKey", c.modifierKey));
         c.isDoubleBindDisabled = ini_bool(ini, "general", "allowBlockDoubleBind", c.isDoubleBindDisabled);
+        c.blockCancelCost = ini_float(ini, "general", "blockCancelCost", c.blockCancelCost);
+        c.enableBlockCancel = ini_bool(ini, "general", "enableBlockCancel", c.enableBlockCancel);
+        c.allowMCORecovery = ini_bool(ini, "general", "allowMCORecovery", c.allowMCORecovery);
 
         log::info("Settings Loaded: commitDuration={}, isLeftAttack={}, allowBlockDoubleBind={}", 
             c.commitDuration, c.leftAttack, c.isDoubleBindDisabled);
@@ -144,8 +147,10 @@ namespace settings {
         ini.SetLongValue("general", "isLeftAttack", c.leftAttack ? 1 : 0);
         ini.SetLongValue("general", "altBlockKey", c.altBlockKey);
         ini.SetLongValue("general", "modifierKey", c.modifierKey);
-        ini.SetLongValue("general", "allowBlockDoubleBind", c.isDoubleBindDisabled ? 1 : 0);
-
+        ini.SetLongValue("general", "isDoubleBindDisabled", c.isDoubleBindDisabled ? 1 : 0);
+        ini.SetDoubleValue("general", "blockCancelCost", static_cast<double>(c.blockCancelCost), "%.3f");
+        ini.SetLongValue("general", "enableBlockCancel", c.enableBlockCancel ? 1 : 0);
+        ini.SetLongValue("general", "allowMCORecovery", c.allowMCORecovery ? 1 : 0);
 
         const SI_Error rc = ini.SaveFile(path);
         if (rc < 0) {
@@ -204,6 +209,13 @@ namespace settings {
             ImGuiMCP::TextUnformatted("Listening for input... (ESC unbinds)");
         }
 
+        // block cancelling stuff
+        ImGuiMCP::Separator();
+        ImGuiMCP::Checkbox("Allow Block Cancel?", &c.enableBlockCancel);
+        ImGuiMCP::Checkbox("Allow Block Cancel During MCO_Recovery?", &c.allowMCORecovery);
+        ImGuiMCP::DragFloat("Block Cancel Cost", &c.blockCancelCost, 1.0f, 0.0f, 50.0f, "%.2f");
+
+        ImGuiMCP::Separator();
         ImGuiMCP::Checkbox("Enable Log", &c.log);
 
     }
