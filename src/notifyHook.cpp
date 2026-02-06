@@ -5,6 +5,24 @@
 #include "utils.h"
 
 namespace notify {
+    void castWardSpell(RE::PlayerCharacter* player) { 
+        auto* spell = utils::findFavoriteWard();
+        if (!spell) {
+            RE::SendHUDMessage::ShowHUDMessage("No favorited ward spell found.", nullptr, true);
+            return;
+        }
+
+        auto* caster = player->GetMagicCaster(RE::MagicSystem::CastingSource::kLeftHand);
+        if (!caster) {
+            RE::SendHUDMessage::ShowHUDMessage("Error: No MagicCaster in left hand", nullptr, true);
+            return;
+        }
+        caster->CastSpellImmediate(spell, true, player, 1.0f, false, 0.0f, player);
+
+        std::string msg = std::string("Casting ward: ") + (spell->GetName() ? spell->GetName() : "<unnamed>");
+        RE::SendHUDMessage::ShowHUDMessage(msg.c_str(), nullptr, true);
+    }
+
     void consumeStamina(RE::PlayerCharacter* player) {
         if (!player) return;
         auto* actorAV = player->AsActorValueOwner();
@@ -32,11 +50,6 @@ namespace notify {
         //  now we need to check if attacking
         auto* playerState = player->AsActorState();
         if (playerState) {
-            // Check if player is attacking - bit less restrictive than checking for isAttacking()
-            /* auto attackState = playerState->GetAttackState();
-             bool isAttacking = (attackState == RE::ATTACK_STATE_ENUM::kSwing || attackState ==
-             RE::ATTACK_STATE_ENUM::kHit); SKSE::log::info("player attack state = {}",
-             std::to_underlying(attackState));*/
             const bool isAttacking = player->IsAttacking();
             if (isAttacking) {
                 consumeStamina(player);
@@ -49,15 +62,15 @@ namespace notify {
         const bool result = _PC_NotifyAnimationGraph(a_this, a_eventName);
 
         if (a_eventName == "blockStart" || a_eventName == "blockStop") {
-            // Handle your event here
-            // a_this is the player character
-            //auto player = static_cast<RE::PlayerCharacter*>(a_this);
-
             if (a_eventName == "blockStart") {
                 blockCommit::Controller::GetSingleton()->beginAltBlock();
                 if (settings::isBlockCancelEnabled()) {
                     if (auto* player = RE::PlayerCharacter::GetSingleton()) {
                         resolveBlockCancel(player);
+                        //ward casting test
+                        if (utils::isRightHandCaster(player)) {
+                            castWardSpell(player);
+                        }
                     }
                 }
             } else if (a_eventName == "blockStop") {

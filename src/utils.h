@@ -35,6 +35,39 @@ namespace utils {
     bool tryBlockIdle(RE::PlayerCharacter* pc);
 
     bool isPlayerBlocking();
+    
+    bool isRightHandCaster(RE::PlayerCharacter* player);
+
+    inline bool isWard(const RE::SpellItem* spell) {
+        if (!spell) {
+            return false;
+        }
+        static const auto* wardKYWD = RE::TESForm::LookupByID<RE::BGSKeyword>(0x0001EA69);
+        if (!wardKYWD) {
+            SKSE::log::info("Warning: No MagicWard Keyword [0x0001EA69] found!");
+            return false;
+        }
+        for (auto* effect : spell->effects) {
+            if (!effect) continue;
+            auto* mgef = effect->baseEffect;
+            if (!mgef) continue; 
+            if (mgef->HasKeyword(wardKYWD)) return true;
+        }
+        return false;
+    }
+
+    //only checks for the first favorite ward, dgaf about everything else
+    inline RE::SpellItem* findFavoriteWard() {
+        auto* fav = RE::MagicFavorites::GetSingleton();
+        if (!fav) return nullptr;
+        for (auto* form : fav->spells) {
+            if (!form) continue;
+            auto* spell = form->As<RE::SpellItem>();
+            if (!spell) continue;
+            if (isWard(spell)) return spell;
+        }
+        return nullptr;
+    }
     //for somnium check for:
     //apo_key_telescope
 }

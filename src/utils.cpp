@@ -228,4 +228,24 @@ namespace utils {
         }
         return true;
     }
+
+    bool isRightHandCaster(RE::PlayerCharacter* player) {
+        if (!player) {
+            return false;
+        }
+
+        const RE::TESForm* rightForm = player->GetEquippedObject(false);
+
+        if (!rightForm) {
+            return false;
+        }
+        if (auto* spell = rightForm->As<RE::MagicItem>()) {
+            return true;
+        }
+
+        if (auto* weapon = rightForm->As<RE::TESObjectWEAP>()) {
+            return weapon->GetWeaponType() == RE::WeaponTypes::WEAPON_TYPE::kStaff;
+        }
+        return false;
+    }
 }

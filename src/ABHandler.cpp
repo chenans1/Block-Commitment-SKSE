@@ -26,6 +26,14 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
     if (!pc) {
         return _ProcessButton(self, ev, data);
     }
+    if (utils::isRightHandCaster(pc)) {
+        if (utils::isPlayerBlocking()) {
+            log::info("right hand caster, is blocking - swallowing input");
+            return;
+        }
+        return _ProcessButton(self, ev, data);
+    }
+
     if (ev->QUserEvent() == "Left Attack/Block") {
         g_blockDevice = ev->GetDevice();
         g_blockIDCode = ev->GetIDCode();
