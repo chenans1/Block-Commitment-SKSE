@@ -68,6 +68,12 @@ namespace block {
                 return RE::BSEventNotifyControl::kContinue;
             }
 
+            if (a_event->tag == "SBF_BlockStart"sv) {
+                if (settings::log()) SKSE::log::info("block exit invoke reset()");
+                blockCommit::Controller::GetSingleton()->reset();
+                return RE::BSEventNotifyControl::kContinue;
+            }
+
             return RE::BSEventNotifyControl::kContinue;
         }
 

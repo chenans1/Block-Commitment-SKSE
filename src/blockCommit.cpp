@@ -87,6 +87,12 @@ namespace blockCommit {
         return true;
     }
 
+    void Controller::reset() {
+        _state.wantStop = false;
+        _state.isBlocking = false;
+        _state.blockDuration = 0.0f;
+    }
+
     //invoked from the player update hook
     void Controller::Update(float a_delta) {
         //SKSE::log::info("[altController] Update()");

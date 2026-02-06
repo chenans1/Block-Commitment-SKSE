@@ -14,6 +14,7 @@ namespace blockCommit {
 
         void Update(float a_delta);
         
+        void reset();
 
     private:
         Controller() = default;
