@@ -66,6 +66,17 @@ namespace altBlock {
         if (!player) {
             return RE::BSEventNotifyControl::kContinue;
         }
+        //check here for enderal telescopes
+        const auto* leftForm = player->GetEquippedObject(true);
+        const auto* leftShield = leftForm ? leftForm->As<RE::TESObjectARMO>() : nullptr;
+        if (leftShield) {
+            // log::info("shield equipped");
+            if (utils::hasTelescopeKeyword(leftShield)) {
+                SKSE::log::info("shield has telescope keyword");
+                return RE::BSEventNotifyControl::kContinue;
+            }
+        }
+
         if (!validPlayerState(player)) {
             return RE::BSEventNotifyControl::kContinue;
         }
