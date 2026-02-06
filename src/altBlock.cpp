@@ -125,8 +125,8 @@ namespace altBlock {
                 if (utils::tryBlockIdle(player)) {
                     SKSE::log::info("tryBlockIdle Worked");
                     st->actorState2.wantBlocking = 1;
-
                 }
+
                 //st->actorState2.wantBlocking = 1;
                 //if (!isBlocking) {
                 //    player->NotifyAnimationGraph("blockStart");

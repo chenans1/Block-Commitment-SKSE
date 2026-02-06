@@ -35,6 +35,8 @@ set(SOURCES
     src/blockCommit.h
     src/blockCommit.cpp
     src/AnimEventSink.h
+    src/notifyHook.h
+    src/notifyHook.cpp
 )
 
 add_commonlibsse_plugin(${PROJECT_NAME} SOURCES ${SOURCES}) # <--- specifies plugin.cpp
