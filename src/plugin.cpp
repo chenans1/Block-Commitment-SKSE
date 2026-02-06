@@ -79,13 +79,13 @@ static void MessageHandler(SKSE::MessagingInterface::Message* msg) {
             utils::init();
             break;
         }
-        /*case SKSE::MessagingInterface::kPostLoadGame: {
+        case SKSE::MessagingInterface::kPostLoadGame: {
             if (auto* pc = RE::PlayerCharacter::GetSingleton()) {
                 pc->AddAnimationGraphEventSink(&block::AnimEventSink::GetSingleton());
                 log::info("registered anim event sink");
             }
             break;
-        }*/
+        }
         default:
             break;
     }

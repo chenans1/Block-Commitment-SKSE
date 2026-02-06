@@ -4,45 +4,6 @@
 #include "utils.h"
 #include "settings.h"
 
-void consumeStamina(RE::PlayerCharacter* player) {
-    if (!player) return;
-    auto* actorAV = player->AsActorValueOwner();
-    if (actorAV) {
-        actorAV->DamageActorValue(RE::ActorValue::kStamina, settings::blockCancelCost());
-        SKSE::log::info("Damaged stamina={}", settings::blockCancelCost());
-    }
-}
-
-//handles consuming stamina for block canceling
-void resolveBlockCancel(RE::PlayerCharacter* player) {
-    if (!player) return;
-    const bool recoveryAllowed = settings::allowMCORecovery();
-    // if we are in recovery, allow block cancel free of cost
-    if (recoveryAllowed) {
-        bool MCO_recovery = false;
-        if (player->GetGraphVariableBool("MCO_IsInRecovery", MCO_recovery)) {
-            if (MCO_recovery) {
-                SKSE::log::info("Player is in MCO_recovery, allow block");
-                return;
-            }
-        }
-    }
-    //const bool blockCancelEnabled = settings::isBlockCancelEnabled();
-    // now we need to check if attacking
-    auto* playerState = player->AsActorState();
-    if (playerState) {
-        // Check if player is attacking - bit less restrictive than checking for isAttacking()
-       /* auto attackState = playerState->GetAttackState();
-        bool isAttacking = (attackState == RE::ATTACK_STATE_ENUM::kSwing || attackState == RE::ATTACK_STATE_ENUM::kHit);
-        SKSE::log::info("player attack state = {}", std::to_underlying(attackState));*/
-        const bool isAttacking = player->IsAttacking();
-        if (isAttacking) {
-            consumeStamina(player);
-        }
-        return;
-    }
-}
-
 namespace block {
     class AnimEventSink : public RE::BSTEventSink<RE::BSAnimationGraphEvent> {
     public:
@@ -58,7 +19,7 @@ namespace block {
                 return RE::BSEventNotifyControl::kContinue;
             }
 
-            if (a_event->tag == "SBF_BlockStart"sv) {
+            /*if (a_event->tag == "SBF_BlockStart"sv) {
                 blockCommit::Controller::GetSingleton()->beginAltBlock();
                 if (settings::isBlockCancelEnabled()) {
                     if (auto* player = RE::PlayerCharacter::GetSingleton()) {
@@ -72,8 +33,15 @@ namespace block {
                 if (settings::log()) SKSE::log::info("block exit invoke reset()");
                 blockCommit::Controller::GetSingleton()->reset();
                 return RE::BSEventNotifyControl::kContinue;
+            }*/
+            if (a_event->tag == "blockStartOut"sv) {
+                if (auto* player = RE::PlayerCharacter::GetSingleton()) {
+                    if (utils::isRightHandCaster(player)) {
+                        utils::castWardSpell(player);
+                    }
+                    return RE::BSEventNotifyControl::kContinue;
+                }
             }
-
             return RE::BSEventNotifyControl::kContinue;
         }
 

@@ -20,12 +20,11 @@ namespace utils {
     }
     bool hasTelescopeKeyword(const RE::TESObjectARMO* shield);
     bool isLeftKeyBlock(RE::PlayerCharacter* player);
-    //borderline just the same function with less restrictions, will be expanded to include magic blocking later.
     bool canAltBlock(RE::PlayerCharacter* player);
 
     //check if player attacking test
     bool isPlayerAttacking(RE::PlayerCharacter* player);
-    bool resolveBlockCancel(RE::PlayerCharacter* player);
+    void resolveBlockCancel(RE::PlayerCharacter* player);
 
     void initKeyword();
     void init();
@@ -37,6 +36,8 @@ namespace utils {
     bool isPlayerBlocking();
     
     bool isRightHandCaster(RE::PlayerCharacter* player);
+
+    inline void consumeStamina(RE::PlayerCharacter* player);
 
     inline bool isWard(const RE::SpellItem* spell) {
         if (!spell) {
@@ -68,6 +69,19 @@ namespace utils {
         }
         return nullptr;
     }
-    //for somnium check for:
-    //apo_key_telescope
+
+    inline void castWardSpell(RE::PlayerCharacter* player) {
+        auto* spell = findFavoriteWard();
+        if (!spell) {
+            RE::SendHUDMessage::ShowHUDMessage("No favorited ward spell found.", nullptr, true);
+            return;
+        }
+
+        auto* caster = player->GetMagicCaster(RE::MagicSystem::CastingSource::kLeftHand);
+        if (!caster) {
+            RE::SendHUDMessage::ShowHUDMessage("Error: No MagicCaster", nullptr, true);
+            return;
+        }
+        caster->CastSpellImmediate(spell, false, player, 1.0f, false, 1.0f, player);
+    }
 }
