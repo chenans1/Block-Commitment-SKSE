@@ -10,6 +10,9 @@ namespace utils {
     inline RE::BGSKeyword* telescopeKYWD = nullptr;
     inline std::atomic_bool kywdCache{false};
     inline RE::TESIdleForm* blockingStartIdle;
+    inline RE::TESIdleForm* bashStartIdle;
+    inline RE::TESIdleForm* bashReleaseIdle;
+
     void initKeyword() { 
         bool expected = false;
         if (!kywdCache.compare_exchange_strong(expected, true)) {
@@ -26,10 +29,22 @@ namespace utils {
 
     void init() {
         blockingStartIdle = RE::TESDataHandler::GetSingleton()->LookupForm<RE::TESIdleForm>(0x00013217, "Skyrim.esm");
+        bashStartIdle = RE::TESDataHandler::GetSingleton()->LookupForm<RE::TESIdleForm>(0x0001B417, "Skyrim.esm");
+        bashReleaseIdle = RE::TESDataHandler::GetSingleton()->LookupForm<RE::TESIdleForm>(0x0001457A, "Skyrim.esm");
         if (blockingStartIdle) {
             SKSE::log::info("[utils] Cached blockingStart ({:08X})", blockingStartIdle->GetFormID());
         } else {
             SKSE::log::info("[utils] failed to find blockingStart");
+        }
+        if (bashStartIdle) {
+            SKSE::log::info("[utils] Cached bashStart ({:08X})", bashStartIdle->GetFormID());
+        } else {
+            SKSE::log::info("[utils] failed to find bashStart");
+        }
+        if (bashReleaseIdle) {
+            SKSE::log::info("[utils] Cached bashRelease ({:08X})", bashReleaseIdle->GetFormID());
+        } else {
+            SKSE::log::info("[utils] failed to find bashRelease");
         }
     }
 
@@ -209,6 +224,40 @@ namespace utils {
             return false;
         }
         return tryIdle(blockingStartIdle, pc);
+    }
+
+    bool tryBashStart(RE::PlayerCharacter* pc) {
+        if (!pc || !bashStartIdle) {
+            return false;
+        }
+        if (auto* st = pc->AsActorState()) {
+            pc->NotifyAnimationGraph("blockStart");
+            st->actorState2.wantBlocking = 1;
+        }
+        const bool success = tryIdle(bashStartIdle, pc);
+        if (settings::log()) {
+            if (success) {
+                SKSE::log::info("[utils] bashStart Successful");
+            } else {
+                SKSE::log::info("[utils] bashStart Failed");
+            }
+        }
+        return success;
+    }
+
+    bool tryBashRelease(RE::PlayerCharacter* pc) {
+        if (!pc || !bashReleaseIdle) {
+            return false;
+        }
+        const bool success = tryIdle(bashReleaseIdle, pc);
+        if (settings::log()) {
+            if (success) {
+                SKSE::log::info("[utils] bashRelease Successful");
+            } else {
+                SKSE::log::info("[utils] bashRelease Failed");
+            }
+        }
+        return success;
     }
 
     //prioritize false, for more permissive release and stop blocking i think

@@ -34,38 +34,36 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
         }
         return _ProcessButton(self, ev, data);
     }
-
+    
     if (ev->QUserEvent() == "Left Attack/Block") {
+        if (!utils::isLeftKeyBlock(pc)) {
+            return _ProcessButton(self, ev, data);
+        }
         g_blockDevice = ev->GetDevice();
         g_blockIDCode = ev->GetIDCode();
         auto* blockController = blockCommit::Controller::GetSingleton();
-        //if (ev->IsDown()) {
-        //    //utils::isPlayerAttacking(pc);
-        //    //blockController->beginLeftBlock();
-        //    if (utils::isLeftKeyBlock(pc)) {
-        //        /*if (settings::replaceLeftWBash()) {
-        //            auto* bashController = bash::bashController::GetSingleton();
-        //            if (bashController) bashController->beginBash(pc);
-        //            return _ProcessButton(self, ev, data);
-        //        }*/
-        //        blockController->beginLeftBlock();
-        //    }
-        //} else 
-        if (ev->IsUp()) {
-            //if (auto* st = pc->AsActorState()) st->actorState2.wantBlocking = 0;
-            /*if (utils::isLeftKeyBlock(pc) && settings::replaceLeftWBash()) {
-                auto* bashController = bash::bashController::GetSingleton();
-                if (bashController) bashController->bashRelease(pc);
+        if (ev->IsDown()) {
+            if (!settings::replaceLeftWBash()) {
+                blockController->beginLeftBlock();
                 return _ProcessButton(self, ev, data);
-            }*/
+            }
+            /*auto* bashController = bash::bashController::GetSingleton();
+            bashController->beginBash(pc);*/
+            if (utils::tryBashStart(pc)) {
+                utils::tryBashRelease(pc);
+            }
+            return _ProcessButton(self, ev, data);
+        /*} else {*/
+        } else if (ev->IsUp()) {
             if (ev->HeldDuration() < settings::getCommitDur()) {
                 const bool swallowed = blockController->wantReleaseLeftBlock();
                 if (swallowed) {
                     if (settings::log()) log::info("[ABHook]: denied left release");
                     return;
                 }
+                return _ProcessButton(self, ev, data);
             } else {
-                blockController->reset();
+                if (pc->IsBlocking()) blockController->reset();
                 return _ProcessButton(self, ev, data);
             }
             

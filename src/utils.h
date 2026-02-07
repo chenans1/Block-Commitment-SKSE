@@ -31,6 +31,8 @@ namespace utils {
     bool tryIdle(RE::TESIdleForm* idle, RE::Actor* actor, RE::DEFAULT_OBJECT action = RE::DEFAULT_OBJECT::kActionIdle,RE::Actor* target = nullptr);
     
     bool tryBlockIdle(RE::PlayerCharacter* pc);
+    bool tryBashStart(RE::PlayerCharacter* pc);
+    bool tryBashRelease(RE::PlayerCharacter* pc);
 
     bool isPlayerBlocking();
     
