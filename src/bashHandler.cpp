@@ -17,6 +17,7 @@ namespace bash {
             log::error("Task interface not available!");
             return;
         }
+        if (settings::log()) log::info("[Bash]: attemping bash release action");
         g_taskInterface->AddTask([a]() {
             std::unique_ptr<RE::TESActionData> data(RE::TESActionData::Create());
             data->source = RE::NiPointer<RE::TESObjectREFR>(a);
@@ -37,6 +38,7 @@ namespace bash {
             auto* st = player->AsActorState();
             if (st) {
                 // Set the attack state to bash
+                //player->NotifyAnimationGraph("blockStart");
                 st->actorState1.meleeAttackState = RE::ATTACK_STATE_ENUM::kBash;
                 player->NotifyAnimationGraph("bashStart");
                 log::info("player forced bash attack");
@@ -68,7 +70,7 @@ namespace bash {
                 // Set the attack state to bash
                 st->actorState1.meleeAttackState = RE::ATTACK_STATE_ENUM::kBash;
                 player->NotifyAnimationGraph("bashStart");
-                if (settings::log()) log::info("player forced bash attack");
+                if (settings::log()) log::info("[Bash] player forced bash attack");
             }
         }
 	}
@@ -85,9 +87,11 @@ namespace bash {
         if (_state.duration <= 0) {
             auto* pc = RE::PlayerCharacter::GetSingleton();
             if (pc) {
-                bashRelease(pc);
-                _state.duration = 0.0f;
-                _state.isBashing = false;
+                if (auto* st = pc->AsActorState()) {
+                    bashRelease(pc);
+                    _state.duration = 0.0f;
+                    _state.isBashing = false;
+                }
             }
             return;
         }

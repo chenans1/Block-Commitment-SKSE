@@ -4,6 +4,7 @@
 #include "blockHandler.h"
 #include "utils.h"
 #include "blockCommit.h"
+#include "bashHandler.h"
 
 using namespace SKSE;
 using namespace SKSE::log;
@@ -27,8 +28,8 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
         return _ProcessButton(self, ev, data);
     }
     if (settings::mageBlock() && utils::isRightHandCaster(pc)) {
-        if (utils::isPlayerBlocking()) {
-            if (settings::log) log::info("right hand caster, is blocking - swallowing input");
+        if (pc->IsBlocking()) {
+            if (settings::log()) log::info("right hand caster, is blocking - swallowing input");
             return;
         }
         return _ProcessButton(self, ev, data);
@@ -41,14 +42,33 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
         //if (ev->IsDown()) {
         //    //utils::isPlayerAttacking(pc);
         //    //blockController->beginLeftBlock();
+        //    if (utils::isLeftKeyBlock(pc)) {
+        //        /*if (settings::replaceLeftWBash()) {
+        //            auto* bashController = bash::bashController::GetSingleton();
+        //            if (bashController) bashController->beginBash(pc);
+        //            return _ProcessButton(self, ev, data);
+        //        }*/
+        //        blockController->beginLeftBlock();
+        //    }
         //} else 
         if (ev->IsUp()) {
             //if (auto* st = pc->AsActorState()) st->actorState2.wantBlocking = 0;
-            const bool swallowed = blockController->wantReleaseLeftBlock();
-            if (swallowed) {
-                if (settings::log()) log::info("[ABHook]: denied left release");
-                return;
+            /*if (utils::isLeftKeyBlock(pc) && settings::replaceLeftWBash()) {
+                auto* bashController = bash::bashController::GetSingleton();
+                if (bashController) bashController->bashRelease(pc);
+                return _ProcessButton(self, ev, data);
+            }*/
+            if (ev->HeldDuration() < settings::getCommitDur()) {
+                const bool swallowed = blockController->wantReleaseLeftBlock();
+                if (swallowed) {
+                    if (settings::log()) log::info("[ABHook]: denied left release");
+                    return;
+                }
+            } else {
+                blockController->reset();
+                return _ProcessButton(self, ev, data);
             }
+            
         }
     }
     return _ProcessButton(self, ev, data);

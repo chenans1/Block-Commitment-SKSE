@@ -23,6 +23,7 @@ namespace settings {
     enum class CaptureTarget : std::uint8_t { None = 0, AltBlock, Modifier };
     inline std::atomic<CaptureTarget> g_captureTarget{CaptureTarget::None};
     inline std::atomic_bool g_waitingRelease{false};
+    //inline std::atomic_bool unsaved{false};
 
     static config cfg{};
     config& Get() { return cfg; }
@@ -93,7 +94,7 @@ namespace settings {
         const int macro = toKeyCode(*btn);
 
         if (macro != 0) {
-            auto& c = Get();
+            //auto& c = Get();
             ApplyCapturedKey(target, macro);
         }
 
@@ -125,7 +126,7 @@ namespace settings {
         c.mageBlock = ini_bool(ini, "general", "mageBlock", c.mageBlock);
         c.mageBash = ini_bool(ini, "general", "mageBash", c.mageBash);
         //c.isSBF = ini_bool(ini, "general", "isSBF", c.isSBF);
-        //c.replaceLeftBlockWithBash = ini_bool(ini, "general", "replaceLeftBlockWithBash", c.replaceLeftBlockWithBash);
+        c.replaceLeftBlockWithBash = ini_bool(ini, "general", "replaceLeftBlockWithBash", c.replaceLeftBlockWithBash);
 
         log::info("Settings Loaded: commitDuration={}, isLeftAttack={}, allowBlockDoubleBind={}", 
             c.commitDuration, c.leftAttack, c.isDoubleBindDisabled);
@@ -152,7 +153,7 @@ namespace settings {
         ini.SetLongValue("general", "mageBlock", c.mageBlock ? 1 : 0);
         ini.SetLongValue("general", "mageBash", c.mageBash ? 1 : 0);
         //ini.SetLongValue("general", "isSBF", c.isSBF ? 1 : 0);
-        //ini.SetLongValue("general", "replaceLeftBlockWithBash", c.replaceLeftBlockWithBash ? 1 : 0);
+        ini.SetLongValue("general", "replaceLeftBlockWithBash", c.replaceLeftBlockWithBash ? 1 : 0);
 
 
         const SI_Error rc = ini.SaveFile(path);
@@ -186,17 +187,15 @@ namespace settings {
             ImGuiMCP::SameLine();
             if (ImGuiMCP::Button("Unbind AltBlock")) {
                 c.altBlockKey = -1;
-                save();
             }
         }
 
-        ImGuiMCP::Separator();
+        //ImGuiMCP::Separator();
         ImGuiMCP::Text("Modifier Key: %d", c.modifierKey);
 
         if (capturing == CaptureTarget::Modifier) {
             ImGuiMCP::SameLine();
             ImGuiMCP::TextUnformatted("Press a key... (ESC = unbind)");
-            unsaved = true;
         } else if (capturing == CaptureTarget::None) {
             if (ImGuiMCP::Button("Rebind Modifier")) {
                 startCapture(CaptureTarget::Modifier);
@@ -205,7 +204,6 @@ namespace settings {
             if (ImGuiMCP::Button("Unbind Modifier")) {
                 c.modifierKey = -1;
             }
-            unsaved = true;
         }
 
         if (capturing != CaptureTarget::None) {
@@ -214,22 +212,19 @@ namespace settings {
         }
 
         // block cancelling stuff
-        ImGuiMCP::Separator();
+        //ImGuiMCP::Separator();
         unsaved |= ImGuiMCP::Checkbox("Enable Block Cancelling Stamina Cost?", &c.enableBlockCancel);
         unsaved |= ImGuiMCP::Checkbox("No Stamina Cost During MCO_Recovery?", &c.allowMCORecovery);
         unsaved |= ImGuiMCP::DragFloat("Block Cancel Cost", &c.blockCancelCost, 1.0f, 0.0f, 50.0f, "%.2f");
 
-        //ImGuiMCP::Checkbox("Replace left block with Bash?", &c.replaceLeftBlockWithBash);
+        //unsaved |= ImGuiMCP::Checkbox("Replace left block with Bash?", &c.replaceLeftBlockWithBash);
+
         unsaved |= ImGuiMCP::Checkbox("Enable Alt Block for Mages? (Requires behavior patch)", &c.mageBlock);
         //unsaved |= ImGuiMCP::Checkbox("Enable Mage Bashing?", &c.mageBash);
 
-        ImGuiMCP::Separator();
+        //ImGuiMCP::Separator();
         unsaved |= ImGuiMCP::Checkbox("Enable Log", &c.log);
 
-        if (unsaved) {
-            ImGuiMCP::Text("Unsaved changes");
-        }
-        ImGuiMCP::SameLine();
         if (ImGuiMCP::Button("Save")) {
             save();
             unsaved = false;
@@ -240,6 +235,11 @@ namespace settings {
             unsaved = false;
         }
 
+        if (unsaved) {
+            ImGuiMCP::TextUnformatted("Unsaved changes");
+        }
+        
+        
     }
 
     void RegisterMenu() {

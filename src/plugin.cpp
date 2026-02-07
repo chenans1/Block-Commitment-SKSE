@@ -60,6 +60,7 @@ static void MessageHandler(SKSE::MessagingInterface::Message* msg) {
             inputMgr->AddEventSink(&altBlock::AltBlockInputSink::GetSingleton());
             utils::initKeyword();
             utils::init();
+            //bash::bashController::GetSingleton()->init();
             break;
         }
         case SKSE::MessagingInterface::kPostLoadGame: {

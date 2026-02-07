@@ -17,10 +17,7 @@ namespace notify {
             }
         } else if (a_eventName == "blockStop") {            
             if (auto* player = RE::PlayerCharacter::GetSingleton()) {
-                bool isBlocking = true;
-                if (player->GetGraphVariableBool("IsBlocking", isBlocking) && !isBlocking) {
-                    blockCommit::Controller::GetSingleton()->reset();
-                }
+                blockCommit::Controller::GetSingleton()->reset();
                 if (settings::mageBlock() && utils::isRightHandCaster(player)) {
                     player->InterruptCast(true);
                 }

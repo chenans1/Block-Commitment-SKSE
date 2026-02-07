@@ -7,19 +7,17 @@
 
 namespace blockCommit {
     void Controller::stopBlocking() {
-        /*_state.wantStop = false;
-        _state.blockDuration = 0.0f;
-        _state.isBlocking = false;*/
-
+        _state.wantStop = false;
         if (auto* player = RE::PlayerCharacter::GetSingleton()) {
             if (auto* st = player->AsActorState()) {
-                st->actorState2.wantBlocking = 0;
                 if (player->IsBlocking()) {
                     player->NotifyAnimationGraph("blockStop");
+                    st->actorState2.wantBlocking = 0;
+                    _state.blockDuration = 0.0f;
                     if (settings::log()) SKSE::log::info("[blockCommit]: delayed blockStop Fired");
+                    return;
                 }
             }
-            return;
         }
         return;
     }
@@ -33,7 +31,6 @@ namespace blockCommit {
         if (settings::log()) SKSE::log::info("[blockCommit]: beginAltBlock");
         _state.altBlockMode = true;
         _state.wantStop = false;
-        _state.isBlocking = true;
         _state.blockDuration = 0.0f;
     }
 
@@ -43,7 +40,6 @@ namespace blockCommit {
         if (settings::log()) SKSE::log::info("[blockCommit]: beginLeftBlock");
         _state.altBlockMode = false;
         _state.wantStop = false;
-        _state.isBlocking = true;
         _state.blockDuration = 0.0f;
     }
 
@@ -52,7 +48,8 @@ namespace blockCommit {
             if (settings::log()) {
                 SKSE::log::info("[wantReleaseAltBlock] allow release: block duration={}", _state.blockDuration);
             }
-            _state.isBlocking = false;
+            _state.wantStop = false;
+            _state.blockDuration = 0.0f;
             stopBlocking();
             return;
         }
@@ -65,14 +62,13 @@ namespace blockCommit {
 
     //returns true/false to decide if we swallow input
     bool Controller::wantReleaseLeftBlock() { 
-        //check blockduration >= blockcommit. if true reset state machine and continue
-        if (!utils::isPlayerBlocking()) {
+        auto* player = RE::PlayerCharacter::GetSingleton();
+        if (player && !player->IsBlocking()) {
             if (settings::log()) {
-                SKSE::log::info("[wantReleaseLeftBlock] player already not blocking");
+                SKSE::log::info("[wantReleaseLeftBlock] Player is not blocking");
             }
-            _state.isBlocking = false;
-            _state.blockDuration = 0.0f;
             _state.wantStop = false;
+            _state.blockDuration = 0.0f;
             return false;
         }
         if (_state.blockDuration >= settings::getCommitDur()) {
@@ -80,40 +76,36 @@ namespace blockCommit {
                 SKSE::log::info("[wantReleaseLeftBlock] allow release: block duration={}", _state.blockDuration);
             }
             _state.wantStop = false;
-            _state.isBlocking = false;
             _state.blockDuration = 0.0f;
             return false;
         }
         //if we haven't held long enough, just set the flag to true
-        _state.wantStop = true;
         if (settings::log()) {
             SKSE::log::info("[wantReleaseLeftBlock]: block duration={}, remaining={}", 
                 _state.blockDuration, (settings::getCommitDur() - _state.blockDuration));
         }
+        _state.wantStop = true;
+
         return true;
     }
 
     void Controller::reset() {
         /*if (!utils::isPlayerBlocking)*/
         _state.wantStop = false;
-        _state.isBlocking = false;
         _state.blockDuration = 0.0f;
     }
 
     //invoked from the player update hook
     void Controller::Update(float a_delta) {
         //SKSE::log::info("[altController] Update()");
-        _state.blockDuration += a_delta;
-        //if we don't want to stop blocking, increment duration and do nothing.
-        if (!_state.wantStop) {
-            return;
+        const auto* player = RE::PlayerCharacter::GetSingleton();
+        if (player->IsBlocking()) {
+            _state.blockDuration += a_delta;
         }
         
         // if we want to stop blocking: check if blockduration > commit duration
         // if true allow unblock, if not do nothing
         if (_state.wantStop && _state.blockDuration >= settings::getCommitDur()) {
-            _state.wantStop = false;
-            _state.isBlocking = false;
             stopBlocking();
             return;
         }

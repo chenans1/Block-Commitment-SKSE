@@ -13,7 +13,7 @@ namespace settings {
         bool allowMCORecovery = true;
         bool mageBlock = true;
         bool mageBash = true;
-        //bool replaceLeftBlockWithBash = true;
+        bool replaceLeftBlockWithBash = true;
 	};
 
 	config& Get();
@@ -29,9 +29,8 @@ namespace settings {
     inline bool allowMCORecovery() { return Get().allowMCORecovery; }
     inline bool mageBlock() { return Get().mageBlock; }
     inline bool mageBash() { return Get().mageBash; }
+    inline int replaceLeftWBash() { return Get().replaceLeftBlockWithBash; }
 
-    //inline bool isSBF() { return Get().isSBF; }
-    /*inline int replaceLeftWBash() { return Get().replaceLeftBlockWithBash; }*/
     void RegisterMenu();
     void __stdcall RenderMenuPage();
 

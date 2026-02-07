@@ -38,15 +38,6 @@ static bool areControlsEnabled() {
 
 namespace altBlock {
     static bool modifierKeyHeld = false;
-
-    //start set the want block flag, if not already blocking we start the block
-    static void StartBlock(RE::PlayerCharacter* player, RE::ActorState* st, bool isBlocking) {
-        st->actorState2.wantBlocking = 1;
-        if (!isBlocking) {
-            player->NotifyAnimationGraph("blockStart");
-        }
-    }
-
     static bool isModRequired() { 
         const int modifierKey = settings::getModifierKey();
         return (modifierKey > 0 && modifierKey < 300);
@@ -132,20 +123,12 @@ namespace altBlock {
                 if (needsModifier && !modifierKeyHeld) {
                     if (settings::log()) SKSE::log::info("Mod={} not held, no block", modifierKey);
                     return RE::BSEventNotifyControl::kContinue;
-                }
-                //utils::resolveBlockCancel(player);
-                //StartBlock(player, st, isBlocking);
-                
+                }                
                 if (utils::tryBlockIdle(player)) {
-                    if (settings::log()) SKSE::log::info("[altBlock] tryBlockIdle Worked");
+                    if (settings::log()) SKSE::log::info("[altBlock] tryBlockIdle Sucessful");
                     st->actorState2.wantBlocking = 1;
+                    //blockController->beginAltBlock();
                 }
-
-                //st->actorState2.wantBlocking = 1;
-                //if (!isBlocking) {
-                //    player->NotifyAnimationGraph("blockStart");
-                //    //blockController->beginAltBlock();
-                //}
             } else if (btn->IsUp()) {
                 //st->actorState2.wantBlocking = 0;
                 blockController->wantReleaseAltBlock();

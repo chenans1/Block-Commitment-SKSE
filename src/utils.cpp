@@ -61,13 +61,16 @@ namespace utils {
             }
             return true;
         }
-
+        
         // you can't block without a weapon in the right hand
         if (!rightWeap) {
             // log::info("no right handed weapon");
+            //verify it's unarmed, if MCO/BFCO we can block, if not:
+            if (!rightForm && !settings::leftAttack()) {
+                return true;
+            }
             return false;
         }
-
         const auto rType = rightWeap->GetWeaponType();
 
         // 1: check if two handed
@@ -82,16 +85,20 @@ namespace utils {
             // log::info("invalid right hand type");
             return false;
         }
-
+        //so we haev a 1h weapon and empty left hand: return true
+        if (!leftForm) {
+            return true;
+        }
         // now check left, make sure it's either unarmed or one handed
         if (leftWeap) {
             const auto lType = leftWeap->GetWeaponType();
             // if left = attack and right hand is 1h weapon then left hand must be empty
-            if (settings::leftAttack() && lType != RE::WeaponTypes::kHandToHandMelee) {
+            //if (settings::leftAttack() && (lType != RE::WeaponTypes::kHandToHandMelee || !leftForm)) {
+            if (settings::leftAttack()) {
                 // log::info("left = attack, left hand is not unarmed/shield");
                 return false;
             }
-            if (lType >= RE::WeaponTypes::kHandToHandMelee && lType <= RE::WeaponTypes::kOneHandMace) {
+            if (!leftForm || (lType >= RE::WeaponTypes::kHandToHandMelee && lType <= RE::WeaponTypes::kOneHandMace)) {
                 // log::info("valid right hand, valid left hand");
                 return true;
             }
@@ -153,7 +160,6 @@ namespace utils {
         }
     }
 
-    //returns true if block is allowed, false if not. 
     void resolveBlockCancel(RE::PlayerCharacter* player) { 
         if (!player) return;
         const bool recoveryAllowed = settings::allowMCORecovery();
@@ -167,7 +173,6 @@ namespace utils {
                 }
             }
         }
-        // const bool blockCancelEnabled = settings::isBlockCancelEnabled();
         //  now we need to check if attacking
         auto* playerState = player->AsActorState();
         if (playerState) {

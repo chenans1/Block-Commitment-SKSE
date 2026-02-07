@@ -19,22 +19,7 @@ namespace block {
                 return RE::BSEventNotifyControl::kContinue;
             }
 
-            /*if (a_event->tag == "SBF_BlockStart"sv) {
-                blockCommit::Controller::GetSingleton()->beginAltBlock();
-                if (settings::isBlockCancelEnabled()) {
-                    if (auto* player = RE::PlayerCharacter::GetSingleton()) {
-                        resolveBlockCancel(player);
-                    }
-                }
-                return RE::BSEventNotifyControl::kContinue;
-            }*/
-            /*const bool usingSBF = settings::isSBF();
-            const bool isStartTag =
-                (usingSBF && a_event->tag == "SBF_BlockStart"sv) || (!usingSBF && a_event->tag == "blockStartOut"sv);
-
-            if (isStartTag) {*/
-            if (a_event->tag == "blockStartOut"sv) {
-                SKSE::log::info("start tag = {}", a_event->tag.data());
+            if (settings::mageBlock() && a_event->tag == "blockStartOut"sv) {
                 if (auto* player = RE::PlayerCharacter::GetSingleton()) {
                     if (utils::isRightHandCaster(player)) {
                         utils::castWardSpell(player);

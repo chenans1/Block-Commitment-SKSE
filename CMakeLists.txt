@@ -39,6 +39,8 @@ set(SOURCES
     src/notifyHook.cpp
     src/soundHandler.h
     src/soundHandler.cpp
+    src/bashHandler.h
+    src/bashHandler.cpp
 )
 
 add_commonlibsse_plugin(${PROJECT_NAME} SOURCES ${SOURCES}) # <--- specifies plugin.cpp
