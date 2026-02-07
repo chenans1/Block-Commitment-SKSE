@@ -24,6 +24,9 @@ namespace settings {
     inline std::atomic<CaptureTarget> g_captureTarget{CaptureTarget::None};
     inline std::atomic_bool g_waitingRelease{false};
 
+    static config cfg{};
+    config& Get() { return cfg; }
+
     static void startCapture(CaptureTarget target) { 
         g_captureTarget.store(target, std::memory_order_release);
         g_waitingRelease.store(true, std::memory_order_release);
@@ -46,8 +49,7 @@ namespace settings {
             default:
                 break;
         }
-
-        save();
+        //save();
         stopCapture();
     }
 
@@ -76,11 +78,7 @@ namespace settings {
             return blockInput;
         }
 
-        if (!btn->IsDown()) {
-            // only cba the down press
-            if (g_waitingRelease) {
-                g_waitingRelease = false;
-            }
+        if (btn->IsDown()) {
             return blockInput;
         }
 
@@ -102,9 +100,6 @@ namespace settings {
         return blockInput;
     }
 
-    static config cfg{};
-    config& Get() { return cfg; }
-
     void load() {
         constexpr auto path = "Data/SKSE/Plugins/blockOverhaul.ini";
         CSimpleIniA ini;
@@ -113,7 +108,6 @@ namespace settings {
         const SI_Error rc = ini.LoadFile(path);
 
         if (rc < 0) {
-            // File missing or unreadable. Keep defaults in g_cfg.
             log::warn("Could not load ini '{}'. Using defaults.", path);
             return;
         }
@@ -128,6 +122,9 @@ namespace settings {
         c.blockCancelCost = ini_float(ini, "general", "blockCancelCost", c.blockCancelCost);
         c.enableBlockCancel = ini_bool(ini, "general", "enableBlockCancel", c.enableBlockCancel);
         c.allowMCORecovery = ini_bool(ini, "general", "allowMCORecovery", c.allowMCORecovery);
+        c.mageBlock = ini_bool(ini, "general", "mageBlock", c.mageBlock);
+        c.mageBash = ini_bool(ini, "general", "mageBash", c.mageBash);
+        //c.isSBF = ini_bool(ini, "general", "isSBF", c.isSBF);
         //c.replaceLeftBlockWithBash = ini_bool(ini, "general", "replaceLeftBlockWithBash", c.replaceLeftBlockWithBash);
 
         log::info("Settings Loaded: commitDuration={}, isLeftAttack={}, allowBlockDoubleBind={}", 
@@ -152,6 +149,9 @@ namespace settings {
         ini.SetDoubleValue("general", "blockCancelCost", static_cast<double>(c.blockCancelCost), "%.3f");
         ini.SetLongValue("general", "enableBlockCancel", c.enableBlockCancel ? 1 : 0);
         ini.SetLongValue("general", "allowMCORecovery", c.allowMCORecovery ? 1 : 0);
+        ini.SetLongValue("general", "mageBlock", c.mageBlock ? 1 : 0);
+        ini.SetLongValue("general", "mageBash", c.mageBash ? 1 : 0);
+        //ini.SetLongValue("general", "isSBF", c.isSBF ? 1 : 0);
         //ini.SetLongValue("general", "replaceLeftBlockWithBash", c.replaceLeftBlockWithBash ? 1 : 0);
 
 
@@ -166,14 +166,14 @@ namespace settings {
 
     void __stdcall RenderMenuPage() { 
         auto& c = Get();
-
-        ImGuiMCP::DragFloat("Block Commitment Duration (Seconds)", &c.commitDuration, 0.01f, 0.0f, 5.0f, "%.2f");
-        ImGuiMCP::Checkbox("Is left attack? (MCO/BFCO users = no)", &c.leftAttack);
-        ImGuiMCP::Checkbox("Disable alt block if left is already block?", &c.isDoubleBindDisabled);
+        static bool unsaved = false;
+        unsaved |= ImGuiMCP::DragFloat("Block Commitment Duration (Seconds)", &c.commitDuration, 0.01f, 0.0f, 5.0f, "%.2f");
+        unsaved |= ImGuiMCP::Checkbox("Is left attack? (MCO/BFCO users = no)", &c.leftAttack);
+        unsaved |= ImGuiMCP::Checkbox("Disable alt block if left is already block?", &c.isDoubleBindDisabled);
 
         const auto capturing = g_captureTarget.load(std::memory_order_acquire);
 
-        ImGuiMCP::Separator();
+        //unsaved |= ImGuiMCP::Separator();
         ImGuiMCP::Text("AltBlock Key: %d", c.altBlockKey);
 
         if (capturing == CaptureTarget::AltBlock) {
@@ -196,6 +196,7 @@ namespace settings {
         if (capturing == CaptureTarget::Modifier) {
             ImGuiMCP::SameLine();
             ImGuiMCP::TextUnformatted("Press a key... (ESC = unbind)");
+            unsaved = true;
         } else if (capturing == CaptureTarget::None) {
             if (ImGuiMCP::Button("Rebind Modifier")) {
                 startCapture(CaptureTarget::Modifier);
@@ -203,8 +204,8 @@ namespace settings {
             ImGuiMCP::SameLine();
             if (ImGuiMCP::Button("Unbind Modifier")) {
                 c.modifierKey = -1;
-                save();
             }
+            unsaved = true;
         }
 
         if (capturing != CaptureTarget::None) {
@@ -214,14 +215,30 @@ namespace settings {
 
         // block cancelling stuff
         ImGuiMCP::Separator();
-        ImGuiMCP::Checkbox("Enable Block Cancelling Stamina Cost?", &c.enableBlockCancel);
-        ImGuiMCP::Checkbox("No Stamina Cost During MCO_Recovery?", &c.allowMCORecovery);
-        ImGuiMCP::DragFloat("Block Cancel Cost", &c.blockCancelCost, 1.0f, 0.0f, 50.0f, "%.2f");
+        unsaved |= ImGuiMCP::Checkbox("Enable Block Cancelling Stamina Cost?", &c.enableBlockCancel);
+        unsaved |= ImGuiMCP::Checkbox("No Stamina Cost During MCO_Recovery?", &c.allowMCORecovery);
+        unsaved |= ImGuiMCP::DragFloat("Block Cancel Cost", &c.blockCancelCost, 1.0f, 0.0f, 50.0f, "%.2f");
 
         //ImGuiMCP::Checkbox("Replace left block with Bash?", &c.replaceLeftBlockWithBash);
+        unsaved |= ImGuiMCP::Checkbox("Enable Alt Block for Mages? (Requires behavior patch)", &c.mageBlock);
+        //unsaved |= ImGuiMCP::Checkbox("Enable Mage Bashing?", &c.mageBash);
 
         ImGuiMCP::Separator();
-        ImGuiMCP::Checkbox("Enable Log", &c.log);
+        unsaved |= ImGuiMCP::Checkbox("Enable Log", &c.log);
+
+        if (unsaved) {
+            ImGuiMCP::Text("Unsaved changes");
+        }
+        ImGuiMCP::SameLine();
+        if (ImGuiMCP::Button("Save")) {
+            save();
+            unsaved = false;
+        }
+        ImGuiMCP::SameLine();
+        if (ImGuiMCP::Button("Revert")) {
+            load();
+            unsaved = false;
+        }
 
     }
 

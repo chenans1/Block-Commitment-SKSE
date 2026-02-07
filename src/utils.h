@@ -1,7 +1,6 @@
 #pragma once
 
-#include <RE/Skyrim.h>
-#include <REL/Relocation.h>
+#include "soundHandler.h"
 
 namespace utils {
 
@@ -72,6 +71,7 @@ namespace utils {
 
     inline void castWardSpell(RE::PlayerCharacter* player) {
         auto* spell = findFavoriteWard();
+        //test something weird: attempt to cast it as a fire and forget spell
         if (!spell) {
             RE::SendHUDMessage::ShowHUDMessage("No favorited ward spell found.", nullptr, true);
             return;
@@ -79,9 +79,32 @@ namespace utils {
 
         auto* caster = player->GetMagicCaster(RE::MagicSystem::CastingSource::kLeftHand);
         if (!caster) {
-            RE::SendHUDMessage::ShowHUDMessage("Error: No MagicCaster", nullptr, true);
             return;
         }
+        //check if the ward is fire and forget or not - in case someone uses a mod that does this
+        const auto wardType = spell->GetCastingType();
+        if (wardType == RE::MagicSystem::CastingType::kFireAndForget) {
+            //if fire and forget ward we need to deduct magicka cost manually
+            auto* actorAV = player->AsActorValueOwner();
+            if (actorAV) {
+                const float spellcost = spell->CalculateMagickaCost(player);
+                if (spellcost >= actorAV->GetActorValue(RE::ActorValue::kMagicka)) {
+                    RE::HUDMenu::FlashMeter(RE::ActorValue::kMagicka);
+                    RE::SendHUDMessage::ShowHUDMessage("Not Enough Magicka To Cast Ward", nullptr, true);
+                    return;
+                }
+                actorAV->DamageActorValue(RE::ActorValue::kMagicka, spell->CalculateMagickaCost(player));
+            }
+        }
+
         caster->CastSpellImmediate(spell, false, player, 1.0f, false, 1.0f, player);
+        // send spell caster event sink
+        if (auto ScriptEventSourceHolder = RE::ScriptEventSourceHolder::GetSingleton()) {
+            if (auto RefHandle = player->CreateRefHandle()) {
+                ScriptEventSourceHolder->SendSpellCastEvent(RefHandle.get(), spell->formID);
+            }
+        }
+        const auto wardSound = sound::GetMGEFSound(spell, RE::MagicSystem::SoundID::kRelease);
+        sound::play_sound(player, wardSound);
     }
 }

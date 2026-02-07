@@ -37,6 +37,8 @@ set(SOURCES
     src/AnimEventSink.h
     src/notifyHook.h
     src/notifyHook.cpp
+    src/soundHandler.h
+    src/soundHandler.cpp
 )
 
 add_commonlibsse_plugin(${PROJECT_NAME} SOURCES ${SOURCES}) # <--- specifies plugin.cpp

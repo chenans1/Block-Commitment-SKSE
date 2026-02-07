@@ -66,6 +66,9 @@ namespace altBlock {
         if (!player) {
             return RE::BSEventNotifyControl::kContinue;
         }
+        if (!settings::mageBlock() && utils::isRightHandCaster(player)) {
+            return RE::BSEventNotifyControl::kContinue;
+        }
         //check here for enderal telescopes
         const auto* leftForm = player->GetEquippedObject(true);
         const auto* leftShield = leftForm ? leftForm->As<RE::TESObjectARMO>() : nullptr;
@@ -134,7 +137,7 @@ namespace altBlock {
                 //StartBlock(player, st, isBlocking);
                 
                 if (utils::tryBlockIdle(player)) {
-                    SKSE::log::info("tryBlockIdle Worked");
+                    if (settings::log()) SKSE::log::info("[altBlock] tryBlockIdle Worked");
                     st->actorState2.wantBlocking = 1;
                 }
 
@@ -144,6 +147,7 @@ namespace altBlock {
                 //    //blockController->beginAltBlock();
                 //}
             } else if (btn->IsUp()) {
+                //st->actorState2.wantBlocking = 0;
                 blockController->wantReleaseAltBlock();
             }
             return RE::BSEventNotifyControl::kContinue;

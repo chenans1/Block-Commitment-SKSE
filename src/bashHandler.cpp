@@ -68,7 +68,7 @@ namespace bash {
                 // Set the attack state to bash
                 st->actorState1.meleeAttackState = RE::ATTACK_STATE_ENUM::kBash;
                 player->NotifyAnimationGraph("bashStart");
-                log::info("player forced bash attack");
+                if (settings::log()) log::info("player forced bash attack");
             }
         }
 	}

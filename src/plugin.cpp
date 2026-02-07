@@ -46,23 +46,6 @@ namespace {
     }
 }
 
-//static void MessageHandler(SKSE::MessagingInterface::Message* msg) {
-//    if (!msg) {
-//        return;
-//    }
-//
-//    if (msg->type == SKSE::MessagingInterface::kDataLoaded) {
-//        auto* inputMgr = RE::BSInputDeviceManager::GetSingleton();
-//        if (!inputMgr) {
-//            log::warn("BSInputDeviceManager Not Available");
-//            return;
-//        }
-//        inputMgr->AddEventSink(&altBlock::AltBlockInputSink::GetSingleton());
-//        utils::initKeyword();
-//
-//    }
-//}
-
 static void MessageHandler(SKSE::MessagingInterface::Message* msg) {
     if (!msg) {
         return;

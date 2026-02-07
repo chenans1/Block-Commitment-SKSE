@@ -11,6 +11,8 @@ namespace settings {
         bool enableBlockCancel = true;
         float blockCancelCost = 10.0f;
         bool allowMCORecovery = true;
+        bool mageBlock = true;
+        bool mageBash = true;
         //bool replaceLeftBlockWithBash = true;
 	};
 
@@ -25,6 +27,10 @@ namespace settings {
     inline bool isBlockCancelEnabled() { return Get().enableBlockCancel; }
     inline float blockCancelCost() { return Get().blockCancelCost; }
     inline bool allowMCORecovery() { return Get().allowMCORecovery; }
+    inline bool mageBlock() { return Get().mageBlock; }
+    inline bool mageBash() { return Get().mageBash; }
+
+    //inline bool isSBF() { return Get().isSBF; }
     /*inline int replaceLeftWBash() { return Get().replaceLeftBlockWithBash; }*/
     void RegisterMenu();
     void __stdcall RenderMenuPage();

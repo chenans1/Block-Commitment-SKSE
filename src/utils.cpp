@@ -200,7 +200,7 @@ namespace utils {
     }
 
     bool tryBlockIdle(RE::PlayerCharacter* pc) {
-        if (!pc || !blockingStartIdle) {
+        if (!pc || !blockingStartIdle || pc->IsBlocking()) {
             return false;
         }
         return tryIdle(blockingStartIdle, pc);
@@ -227,12 +227,25 @@ namespace utils {
         return true;
     }
 
+    //more accurately - checks if you're allowed to block. shield = always so 
     bool isRightHandCaster(RE::PlayerCharacter* player) {
         if (!player) {
             return false;
         }
 
         const RE::TESForm* rightForm = player->GetEquippedObject(false);
+        const auto* leftForm = player->GetEquippedObject(true);
+        const auto* leftShield = leftForm ? leftForm->As<RE::TESObjectARMO>() : nullptr;
+
+        // if you have left shield always can block, but you don't need alt block key in this case so uhhh?
+        if (leftShield) {
+            //if (hasTelescopeKeyword(leftShield)) {
+            //    log::info("shield has telescope keyword");
+            //    return true;  // telescope shields CANNOT alt-block
+            //}
+            // log::info("shield equipped");
+            return false;
+        }
 
         if (!rightForm) {
             return false;

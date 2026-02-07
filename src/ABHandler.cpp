@@ -26,9 +26,9 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
     if (!pc) {
         return _ProcessButton(self, ev, data);
     }
-    if (utils::isRightHandCaster(pc)) {
+    if (settings::mageBlock() && utils::isRightHandCaster(pc)) {
         if (utils::isPlayerBlocking()) {
-            log::info("right hand caster, is blocking - swallowing input");
+            if (settings::log) log::info("right hand caster, is blocking - swallowing input");
             return;
         }
         return _ProcessButton(self, ev, data);
@@ -43,6 +43,7 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
         //    //blockController->beginLeftBlock();
         //} else 
         if (ev->IsUp()) {
+            //if (auto* st = pc->AsActorState()) st->actorState2.wantBlocking = 0;
             const bool swallowed = blockController->wantReleaseLeftBlock();
             if (swallowed) {
                 if (settings::log()) log::info("[ABHook]: denied left release");
