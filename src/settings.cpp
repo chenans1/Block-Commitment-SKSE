@@ -213,11 +213,21 @@ namespace settings {
 
         // block cancelling stuff
         //ImGuiMCP::Separator();
-        unsaved |= ImGuiMCP::Checkbox("Enable Block Cancelling Stamina Cost?", &c.enableBlockCancel);
-        unsaved |= ImGuiMCP::Checkbox("No Stamina Cost During MCO_Recovery?", &c.allowMCORecovery);
-        unsaved |= ImGuiMCP::DragFloat("Block Cancel Cost", &c.blockCancelCost, 1.0f, 0.0f, 50.0f, "%.2f");
+        
 
-        //unsaved |= ImGuiMCP::Checkbox("Replace left block with Bash?", &c.replaceLeftBlockWithBash);
+        unsaved |= ImGuiMCP::Checkbox("Enable Block Cancelling Stamina Cost", &c.enableBlockCancel);
+       /* unsaved |= ImGuiMCP::Checkbox("No Stamina Cost During MCO_Recovery?", &c.allowMCORecovery);
+        unsaved |= ImGuiMCP::DragFloat("Block Cancel Cost", &c.blockCancelCost, 1.0f, 0.0f, 50.0f, "%.2f");*/
+        ImGuiMCP::BeginDisabled(!c.enableBlockCancel);
+        {
+            unsaved |= ImGuiMCP::Checkbox("No Stamina Cost During MCO_Recovery", &c.allowMCORecovery);
+            unsaved |= ImGuiMCP::DragFloat("Block Cancel Cost", &c.blockCancelCost, 1.0f, 0.0f, 50.0f, "%.2f");
+        }
+        ImGuiMCP::EndDisabled();
+        if (!c.enableBlockCancel) {
+            ImGuiMCP::TextUnformatted("Enable Block Cancelling to edit these options.");
+        }
+        unsaved |= ImGuiMCP::Checkbox("Replace left block with Bash?", &c.replaceLeftBlockWithBash);
 
         unsaved |= ImGuiMCP::Checkbox("Enable Alt Block for Mages? (Requires behavior patch)", &c.mageBlock);
         //unsaved |= ImGuiMCP::Checkbox("Enable Mage Bashing?", &c.mageBash);
