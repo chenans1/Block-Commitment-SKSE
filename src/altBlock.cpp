@@ -127,11 +127,23 @@ namespace altBlock {
                 if (utils::tryBlockIdle(player)) {
                     if (settings::log()) SKSE::log::info("[altBlock] tryBlockIdle Sucessful");
                     st->actorState2.wantBlocking = 1;
+                    return RE::BSEventNotifyControl::kContinue;
                     //blockController->beginAltBlock();
                 }
             } else if (btn->IsUp()) {
                 //st->actorState2.wantBlocking = 0;
-                blockController->wantReleaseAltBlock();
+                if (player->IsBlocking()) {
+                    if (btn->HeldDuration() < settings::getCommitDur()) {
+                        blockController->wantReleaseAltBlock();
+                    } else {
+                        blockController->reset();
+                        player->NotifyAnimationGraph("blockStop");
+                    }
+                } else {
+                    blockController->reset();
+                }
+                st->actorState2.wantBlocking = 0;
+                return RE::BSEventNotifyControl::kContinue;
             }
             return RE::BSEventNotifyControl::kContinue;
         }

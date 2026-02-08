@@ -126,7 +126,7 @@ namespace settings {
         c.mageBlock = ini_bool(ini, "general", "mageBlock", c.mageBlock);
         c.mageBash = ini_bool(ini, "general", "mageBash", c.mageBash);
         //c.isSBF = ini_bool(ini, "general", "isSBF", c.isSBF);
-        c.replaceLeftBlockWithBash = ini_bool(ini, "general", "replaceLeftBlockWithBash", c.replaceLeftBlockWithBash);
+        //c.replaceLeftBlockWithBash = ini_bool(ini, "general", "replaceLeftBlockWithBash", c.replaceLeftBlockWithBash);
 
         log::info("Settings Loaded: commitDuration={}, isLeftAttack={}, allowBlockDoubleBind={}", 
             c.commitDuration, c.leftAttack, c.isDoubleBindDisabled);
@@ -153,7 +153,7 @@ namespace settings {
         ini.SetLongValue("general", "mageBlock", c.mageBlock ? 1 : 0);
         ini.SetLongValue("general", "mageBash", c.mageBash ? 1 : 0);
         //ini.SetLongValue("general", "isSBF", c.isSBF ? 1 : 0);
-        ini.SetLongValue("general", "replaceLeftBlockWithBash", c.replaceLeftBlockWithBash ? 1 : 0);
+        //ini.SetLongValue("general", "replaceLeftBlockWithBash", c.replaceLeftBlockWithBash ? 1 : 0);
 
 
         const SI_Error rc = ini.SaveFile(path);
@@ -227,11 +227,10 @@ namespace settings {
         if (!c.enableBlockCancel) {
             ImGuiMCP::TextUnformatted("Enable Block Cancelling to edit these options.");
         }
-        unsaved |= ImGuiMCP::Checkbox("Replace left block with Bash?", &c.replaceLeftBlockWithBash);
-
+        
         unsaved |= ImGuiMCP::Checkbox("Enable Alt Block for Mages? (Requires behavior patch)", &c.mageBlock);
         //unsaved |= ImGuiMCP::Checkbox("Enable Mage Bashing?", &c.mageBash);
-
+        // unsaved |= ImGuiMCP::Checkbox("Replace left block with Bash?", &c.replaceLeftBlockWithBash);
         //ImGuiMCP::Separator();
         unsaved |= ImGuiMCP::Checkbox("Enable Log", &c.log);
 

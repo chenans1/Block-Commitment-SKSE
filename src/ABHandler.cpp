@@ -45,22 +45,24 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
         g_blockIDCode = ev->GetIDCode();
         auto* blockController = blockCommit::Controller::GetSingleton();
         if (ev->IsDown()) {
-            if (!settings::replaceLeftWBash()||pc->IsAttacking()) {
-                blockController->beginLeftBlock();
-                return _ProcessButton(self, ev, data);
-            }
-            /*auto* bashController = bash::bashController::GetSingleton();
-            bashController->beginBash(pc);*/
-            if (utils::tryBashStart(pc)) {
-                bashing = true;
-            }
+            //if (!settings::replaceLeftWBash()||pc->IsAttacking()) {
+            //    blockController->beginLeftBlock();
+            //    return _ProcessButton(self, ev, data);
+            //}
+            ///*auto* bashController = bash::bashController::GetSingleton();
+            //bashController->beginBash(pc);*/
+            //if (utils::tryBashStart(pc)) {
+            //    bashing = true;
+            //}
+            //return _ProcessButton(self, ev, data);
+            blockController->beginLeftBlock();
             return _ProcessButton(self, ev, data);
         /*} else {*/
         } else if (ev->IsUp()) {
-            if (settings::replaceLeftWBash() && bashing) {
+            /*if (settings::replaceLeftWBash() && bashing) {
                 utils::tryBashRelease(pc);
                 bashing = false;
-            }
+            }*/
             if (ev->HeldDuration() < settings::getCommitDur()) {
                 const bool swallowed = blockController->wantReleaseLeftBlock();
                 if (swallowed) {
