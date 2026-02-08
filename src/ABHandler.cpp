@@ -17,6 +17,8 @@ static inline std::uint32_t g_blockIDCode = 0;
 using ProcessButton_t = void (*)(RE::AttackBlockHandler*, RE::ButtonEvent*, RE::PlayerControlsData*);
 static inline ProcessButton_t _ProcessButton = nullptr;
 
+static bool bashing = false;
+
 static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE::PlayerControlsData* data) {
     if (!self || !ev || !data || !_ProcessButton) {
         log::warn("[ABHook]: missing self/ev/data/_ProcessButton");
@@ -43,18 +45,22 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
         g_blockIDCode = ev->GetIDCode();
         auto* blockController = blockCommit::Controller::GetSingleton();
         if (ev->IsDown()) {
-            if (!settings::replaceLeftWBash()) {
+            if (!settings::replaceLeftWBash()||pc->IsAttacking()) {
                 blockController->beginLeftBlock();
                 return _ProcessButton(self, ev, data);
             }
             /*auto* bashController = bash::bashController::GetSingleton();
             bashController->beginBash(pc);*/
             if (utils::tryBashStart(pc)) {
-                utils::tryBashRelease(pc);
+                bashing = true;
             }
             return _ProcessButton(self, ev, data);
         /*} else {*/
         } else if (ev->IsUp()) {
+            if (settings::replaceLeftWBash() && bashing) {
+                utils::tryBashRelease(pc);
+                bashing = false;
+            }
             if (ev->HeldDuration() < settings::getCommitDur()) {
                 const bool swallowed = blockController->wantReleaseLeftBlock();
                 if (swallowed) {

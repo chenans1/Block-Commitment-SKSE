@@ -249,6 +249,7 @@ namespace utils {
         if (!pc || !bashReleaseIdle) {
             return false;
         }
+        //force IsAttacking boolean to false
         const bool success = tryIdle(bashReleaseIdle, pc);
         if (settings::log()) {
             if (success) {
