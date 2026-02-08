@@ -109,4 +109,6 @@ namespace utils {
         const auto wardSound = sound::GetMGEFSound(spell, RE::MagicSystem::SoundID::kRelease);
         sound::play_sound(player, wardSound);
     }
+
+    void dampVelocity(RE::PlayerCharacter* player, float horizontalScale);
 }

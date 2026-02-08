@@ -220,7 +220,7 @@ namespace utils {
     }
 
     bool tryBlockIdle(RE::PlayerCharacter* pc) {
-        if (!pc || !blockingStartIdle || pc->IsBlocking()) {
+        if (!pc || !blockingStartIdle) {
             return false;
         }
         return tryIdle(blockingStartIdle, pc);
@@ -313,5 +313,68 @@ namespace utils {
             return weapon->GetWeaponType() == RE::WeaponTypes::WEAPON_TYPE::kStaff;
         }
         return false;
+    }
+
+    static void LogHKVec4(std::string_view label, const RE::hkVector4& v) {
+        log::info("[vec4] {} = ({:.4f}, {:.4f}, {:.4f}, {:.4f})", label, v.quad.m128_f32[0], v.quad.m128_f32[1],
+                  v.quad.m128_f32[2], v.quad.m128_f32[3]);
+    }
+
+    void dampVelocity(RE::PlayerCharacter* player, float scale) {
+        if (!player) {
+            return;
+        }
+        if (!player->IsAttacking()) {
+            if (settings::log()) {log::info("[dampVelocity]: Player is not attacking, do nothing");}
+            return;
+        }
+        RE::bhkCharacterController* controller = player->GetCharController();
+        if (!controller) {
+            log::info("[dampVelocity]: no player controller");
+            return;
+        }
+
+        LogHKVec4("forwardVec", controller->forwardVec);
+        LogHKVec4("outVelocity", controller->outVelocity);
+        LogHKVec4("initialVelocity", controller->initialVelocity);
+        LogHKVec4("velocityMod", controller->velocityMod);
+        //RE::hkVector4 vel{};
+        /*controller->GetLinearVelocityImpl(vel); */
+        //only adjust x-y
+        //if (!settings::log()) {
+        //    vel.quad.m128_f32[0] *= scale;
+        //    vel.quad.m128_f32[1] *= scale;
+        //    vel.quad.m128_f32[2] *= scale;
+        //    vel.quad.m128_f32[3] *= scale;
+        //} else {
+        //    const float before1 = vel.quad.m128_f32[0];
+        //    const float before2 = vel.quad.m128_f32[1];
+        //    const float before3 = vel.quad.m128_f32[2];
+        //    const float before4 = vel.quad.m128_f32[3];
+        //    vel.quad.m128_f32[0] *= scale;
+        //    vel.quad.m128_f32[1] *= scale;
+        //    vel.quad.m128_f32[2] *= scale;
+        //    vel.quad.m128_f32[3] *= scale;
+        //    const float after1 = vel.quad.m128_f32[0];
+        //    const float after2 = vel.quad.m128_f32[1];
+        //    const float after3 = vel.quad.m128_f32[2];
+        //    const float after4 = vel.quad.m128_f32[3];
+        //    /*log::info(
+        //        "[dampVelocity] BEFORE: A={:.4f}, B={:.4f}, C={:.4f}, D={:.4f} | "
+        //        "AFTER: A={:.4f}, B={:.4f}, C={:.4f}, D={:.4f}",
+        //        before1, before2, before3, before4, after1, after2, after3, after4);*/
+        //
+        //}
+        //controller->SetLinearVelocityImpl(vel);
+        controller->SetLinearVelocityImpl({0.0f, 0.0f, 0.0f, 0.0f});
+        controller->forwardVec = {0.0f, 0.0f, 0.0f, 0.0f};
+        controller->velocityMod = {0.0f, 0.0f, 0.0f, 0.0f};
+        controller->outVelocity = {0.0f, 0.0f, 0.0f, 0.0f};
+        controller->initialVelocity = {0.0f, 0.0f, 0.0f, 0.0f};
+        LogHKVec4("forwardVec", controller->forwardVec);
+        LogHKVec4("outVelocity", controller->outVelocity);
+        LogHKVec4("initialVelocity", controller->initialVelocity);
+        LogHKVec4("velocityMod", controller->velocityMod);
+        //controller->SetLinearVelocityImpl(vel);
     }
 }

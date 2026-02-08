@@ -7,13 +7,14 @@
 namespace notify {
     bool PC_NotifyAnimationGraph(RE::IAnimationGraphManagerHolder* a_this, const RE::BSFixedString& a_eventName) {
         const bool result = _PC_NotifyAnimationGraph(a_this, a_eventName);
-
+        if (!result) return result;
         if (a_eventName == "blockStart") {
             blockCommit::Controller::GetSingleton()->beginAltBlock();
-            if (settings::isBlockCancelEnabled()) {
-                if (auto* player = RE::PlayerCharacter::GetSingleton()) {
+            if (auto* player = RE::PlayerCharacter::GetSingleton()) {
+                if (settings::isBlockCancelEnabled()) {
                     utils::resolveBlockCancel(player);
                 }
+                //utils::dampVelocity(player, 0.0f);
             }
         } else if (a_eventName == "blockStop") {            
             if (auto* player = RE::PlayerCharacter::GetSingleton()) {

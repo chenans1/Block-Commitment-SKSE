@@ -75,7 +75,7 @@ namespace altBlock {
             return RE::BSEventNotifyControl::kContinue;
         }
         /*if (!utils::canAltBlock(player)) {
-            return RE::BSEventNotifyControl::kContin        ue;
+            return RE::BSEventNotifyControl::kContinue;
         }*/
         //disable the altblock if you don't need it to block
         if (settings::isDoubleBindDisabled() && utils::isLeftKeyBlock(player)) {
@@ -123,29 +123,20 @@ namespace altBlock {
                 if (needsModifier && !modifierKeyHeld) {
                     if (settings::log()) SKSE::log::info("Mod={} not held, no block", modifierKey);
                     return RE::BSEventNotifyControl::kContinue;
-                }                
+                }               
+                //st->actorState2.wantBlocking = 1;
                 if (utils::tryBlockIdle(player)) {
                     if (settings::log()) SKSE::log::info("[altBlock] tryBlockIdle Sucessful");
                     st->actorState2.wantBlocking = 1;
-                    return RE::BSEventNotifyControl::kContinue;
-                    //blockController->beginAltBlock();
+                    blockController->beginAltBlock();
+                    //return RE::BSEventNotifyControl::kContinue;
                 }
+                /*if (settings::log()) SKSE::log::info("[altBlock] tryBlockIdleFailed");
+                st->actorState2.wantBlocking = 1;*/
             } else if (btn->IsUp()) {
-                //st->actorState2.wantBlocking = 0;
-                if (player->IsBlocking()) {
-                    if (btn->HeldDuration() < settings::getCommitDur()) {
-                        blockController->wantReleaseAltBlock();
-                    } else {
-                        blockController->reset();
-                        player->NotifyAnimationGraph("blockStop");
-                    }
-                } else {
-                    blockController->reset();
-                }
-                st->actorState2.wantBlocking = 0;
-                return RE::BSEventNotifyControl::kContinue;
+                blockController->wantReleaseAltBlock();
             }
-            return RE::BSEventNotifyControl::kContinue;
+            //return RE::BSEventNotifyControl::kContinue;
         }
         return RE::BSEventNotifyControl::kContinue;
     }
