@@ -14,6 +14,10 @@ static bool ini_bool(CSimpleIniA& ini, const char* section, const char* key, boo
 static float ini_float(CSimpleIniA& ini, const char* section, const char* key, float def) {
     return static_cast<float>(ini.GetDoubleValue(section, key, def));
 }
+//static float fetchDelay() { 
+//    REL::Relocation<RE::Setting*> fInitialPowerAttackDelay{RELOCATION_ID(509496, 381954)}; 
+//    
+//}
 
 namespace settings {
     //some stuff to handle the capturing of the keybind since i think onInput just straight up always polls even if the menu is closed
@@ -25,9 +29,38 @@ namespace settings {
     inline std::atomic_bool g_waitingRelease{false};
     //inline std::atomic_bool unsaved{false};
 
+    //REL::Relocation<RE::Setting*> fInitialPowerAttackDelay{RELOCATION_ID(509496, 381954)};
+    /*inline float fMinBashDelay = fInitialPowerAttackDelay->GetFloat();*/
+
+    static float iniPowerBashDelay = 0.30f;  
+    static bool iniPowerBashDelayLoaded = false;
+
     static config cfg{};
     config& Get() { return cfg; }
 
+    static float readPowerBashDelay() { 
+        auto* ini = RE::INISettingCollection::GetSingleton();
+        if (!ini) {
+            log::info("[settings] failed to fetch ini singleton");
+            return iniPowerBashDelay;
+        }
+        if (auto* s = ini->GetSetting("fInitialPowerBashDelay:Controls"); s) {
+            if (s->GetType() == RE::Setting::Type::kFloat) {
+                log::info("[settings] Found fInitialPowerBashDelay");
+                return s->GetFloat();
+            }
+        }
+        log::info("[settings] failed to find fInitialPowerBashDelay");
+        return iniPowerBashDelay;
+    }
+
+    float getPowerBashDelay() {
+        if (!iniPowerBashDelayLoaded) {
+            iniPowerBashDelay = readPowerBashDelay();
+            iniPowerBashDelayLoaded = true;
+        }
+        return iniPowerBashDelay;
+    }
     static void startCapture(CaptureTarget target) { 
         g_captureTarget.store(target, std::memory_order_release);
         g_waitingRelease.store(true, std::memory_order_release);
@@ -171,7 +204,22 @@ namespace settings {
         static bool unsaved = false;
         unsaved |= ImGuiMCP::DragFloat("Block Commitment Duration (Seconds)", &c.commitDuration, 0.01f, 0.0f, 5.0f, "%.2f");
         unsaved |= ImGuiMCP::Checkbox("Is left attack? (MCO/BFCO users = no)", &c.leftAttack);
-        unsaved |= ImGuiMCP::Checkbox("Disable alt block if left is already block?", &c.isDoubleBindDisabled);
+        unsaved |= ImGuiMCP::Checkbox("Alt Blocking is Bashing if left input is Block?", &c.altBlockBash);
+        ImGuiMCP::BeginDisabled(c.altBlockBash);
+        {   
+            //ImGuiMCP::TextUnformatted("Alt Block is Bashing if LeftHanded Block is available.");
+            unsaved |= ImGuiMCP::Checkbox("Disable alt block if left is already block?", &c.isDoubleBindDisabled);
+        }
+        ImGuiMCP::EndDisabled();
+        ImGuiMCP::BeginDisabled(!c.altBlockBash);
+        {
+            float fMinBashDelay = getPowerBashDelay();
+            ImGuiMCP::TextUnformatted("If powerBashDelay is too high, normal bash will always be fired.");
+            ImGuiMCP::Text("powerBashDelay must be >= fInitialPowerBashDelay: %.2f", fMinBashDelay);
+            unsaved |= ImGuiMCP::DragFloat("Hold Duration for powerBash", 
+                &c.powerBashDelay, 0.01f, fMinBashDelay, 0.5f, "%.2f");
+        }
+        ImGuiMCP::EndDisabled();
 
         const auto capturing = g_captureTarget.load(std::memory_order_acquire);
 
@@ -217,7 +265,7 @@ namespace settings {
         /*unsaved |= ImGuiMCP::Checkbox("No Stamina Cost During MCO_Recovery?", &c.allowMCORecovery);
         unsaved |= ImGuiMCP::DragFloat("Block Cancel Cost", &c.blockCancelCost, 1.0f, 0.0f, 50.0f, "%.2f");*/
         ImGuiMCP::BeginDisabled(!c.enableBlockCancel);
-        {
+        {   
             unsaved |= ImGuiMCP::Checkbox("No Stamina Cost During MCO_Recovery", &c.allowMCORecovery);
             unsaved |= ImGuiMCP::DragFloat("Block Cancel Cost", &c.blockCancelCost, 1.0f, 0.0f, 50.0f, "%.2f");
         }
@@ -229,14 +277,6 @@ namespace settings {
         
         unsaved |= ImGuiMCP::Checkbox("Enable Alt Block for Mages? (Requires behavior patch)", &c.mageBlock);
         //unsaved |= ImGuiMCP::Checkbox("Enable Mage Bashing?", &c.mageBash);
-        unsaved |= ImGuiMCP::Checkbox("Alt Blocking is Bashing if left input is Block?", &c.altBlockBash);
-        ImGuiMCP::BeginDisabled(!c.altBlockBash);
-        {   
-            ImGuiMCP::TextUnformatted("If powerBashDelay is too high, normal bash will always be fired.");
-            unsaved |= ImGuiMCP::DragFloat("Hold Duration for powerBash", &c.powerBashDelay, 0.01f, 0.0f, 0.25f, "%.2f");
-        }
-        ImGuiMCP::EndDisabled();
-
         unsaved |= ImGuiMCP::Checkbox("Enable Log", &c.log);
 
         if (ImGuiMCP::Button("Save")) {
