@@ -109,15 +109,8 @@ namespace altBlock {
                     modifierKeyHeld = false;
                 }
             }
-
             if (macro != bind) continue;
-            
-            //if not blocking, then start blocking
-            /*bool isBlocking = false;
-            if (!player->GetGraphVariableBool("IsBlocking", isBlocking)) {
-                return RE::BSEventNotifyControl::kContinue;
-            }*/
-            // now we finally actually check if we are blocking.
+
             auto* st = player->AsActorState();
             if (!st) { return RE::BSEventNotifyControl::kContinue; }
             auto* blockController = blockCommit::Controller::GetSingleton();
@@ -132,19 +125,19 @@ namespace altBlock {
                 if (bashInstead && player->IsAttacking()) {
                     return RE::BSEventNotifyControl::kContinue;
                 }
+                if (!bashInstead) blockController->beginAltBlock();
                 if (utils::tryBlockIdle(player)) {
                     if (settings::log()) SKSE::log::info("[altBlock] tryBlockIdle Sucessful");
                     st->actorState2.wantBlocking = 1;
                     if (bashInstead) {
                         if (utils::tryBashStart(player)) {
                             isBashing = true;
-                            //utils::tryBashRelease(player);
                         }
-                    } else {
+                    } /*else {
                         blockController->beginAltBlock();
-                    }
-                    //return RE::BSEventNotifyControl::kContinue;
+                    }*/
                 }
+                return RE::BSEventNotifyControl::kContinue;
             } else if (btn->IsPressed() && btn->HeldDuration() >= settings::powerBashDelay()) {
                 if (bashInstead && isBashing) {
                     utils::tryBashPowerStart(player);
@@ -155,6 +148,8 @@ namespace altBlock {
             } else if (btn->IsUp()) {
                 if (!bashInstead) {
                     blockController->wantReleaseAltBlock();
+                    isBashing = false;
+                    //return RE::BSEventNotifyControl::kContinue;
                 } else {
                     if (isBashing) {
                         if (btn->HeldDuration() < settings::powerBashDelay()) {
