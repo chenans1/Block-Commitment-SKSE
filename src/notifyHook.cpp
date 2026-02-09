@@ -19,7 +19,7 @@ namespace notify {
         } else if (a_eventName == "blockStop") {            
             if (auto* player = RE::PlayerCharacter::GetSingleton()) {
                 blockCommit::Controller::GetSingleton()->reset();
-                if (settings::mageBlock() && utils::isRightHandCaster(player)) {
+                if (settings::mageBlock() && settings::mageWard() && utils::isRightHandCaster(player)) {
                     player->InterruptCast(true);
                 }
             }

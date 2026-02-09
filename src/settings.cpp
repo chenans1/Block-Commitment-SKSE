@@ -14,23 +14,14 @@ static bool ini_bool(CSimpleIniA& ini, const char* section, const char* key, boo
 static float ini_float(CSimpleIniA& ini, const char* section, const char* key, float def) {
     return static_cast<float>(ini.GetDoubleValue(section, key, def));
 }
-//static float fetchDelay() { 
-//    REL::Relocation<RE::Setting*> fInitialPowerAttackDelay{RELOCATION_ID(509496, 381954)}; 
-//    
-//}
 
 namespace settings {
     //some stuff to handle the capturing of the keybind since i think onInput just straight up always polls even if the menu is closed
     inline std::atomic_bool g_captureBind{false};
-    //inline bool g_waitingRelease = false;
 
     enum class CaptureTarget : std::uint8_t { None = 0, AltBlock, Modifier };
     inline std::atomic<CaptureTarget> g_captureTarget{CaptureTarget::None};
     inline std::atomic_bool g_waitingRelease{false};
-    //inline std::atomic_bool unsaved{false};
-
-    //REL::Relocation<RE::Setting*> fInitialPowerAttackDelay{RELOCATION_ID(509496, 381954)};
-    /*inline float fMinBashDelay = fInitialPowerAttackDelay->GetFloat();*/
 
     static float iniPowerBashDelay = 0.30f;  
     static bool iniPowerBashDelayLoaded = false;
@@ -83,7 +74,6 @@ namespace settings {
             default:
                 break;
         }
-        //save();
         stopCapture();
     }
 
@@ -157,8 +147,8 @@ namespace settings {
         c.enableBlockCancel = ini_bool(ini, "general", "enableBlockCancel", c.enableBlockCancel);
         c.allowMCORecovery = ini_bool(ini, "general", "allowMCORecovery", c.allowMCORecovery);
         c.mageBlock = ini_bool(ini, "general", "mageBlock", c.mageBlock);
-        c.mageBash = ini_bool(ini, "general", "mageBash", c.mageBash);
-        //c.isSBF = ini_bool(ini, "general", "isSBF", c.isSBF);
+        c.mageWard = ini_bool(ini, "general", "mageWard", c.mageWard);
+        //c.mageBash = ini_bool(ini, "general", "mageBash", c.mageBash);
         c.altBlockBash = ini_bool(ini, "general", "altBlockBash", c.altBlockBash);
         c.powerBashDelay = ini_float(ini, "general", "powerBashDelay", c.powerBashDelay);
 
@@ -185,8 +175,8 @@ namespace settings {
         ini.SetLongValue("general", "enableBlockCancel", c.enableBlockCancel ? 1 : 0);
         ini.SetLongValue("general", "allowMCORecovery", c.allowMCORecovery ? 1 : 0);
         ini.SetLongValue("general", "mageBlock", c.mageBlock ? 1 : 0);
-        ini.SetLongValue("general", "mageBash", c.mageBash ? 1 : 0);
-        //ini.SetLongValue("general", "isSBF", c.isSBF ? 1 : 0);
+        ini.SetLongValue("general", "mageWard", c.mageWard ? 1 : 0);
+        /*ini.SetLongValue("general", "mageBash", c.mageBash ? 1 : 0);*/
         ini.SetLongValue("general", "altBlockBash", c.altBlockBash ? 1 : 0);
         ini.SetDoubleValue("general", "powerBashDelay", static_cast<double>(c.powerBashDelay), "%.3f");
 
@@ -203,8 +193,8 @@ namespace settings {
         auto& c = Get();
         static bool unsaved = false;
         unsaved |= ImGuiMCP::DragFloat("Block Commitment Duration (Seconds)", &c.commitDuration, 0.01f, 0.0f, 5.0f, "%.2f");
-        unsaved |= ImGuiMCP::Checkbox("Is left attack? (MCO/BFCO users = no)", &c.leftAttack);
-        unsaved |= ImGuiMCP::Checkbox("Alt Blocking is Bashing if left input is Block?", &c.altBlockBash);
+        unsaved |= ImGuiMCP::Checkbox("For dual wield/unarmed is left key attack? (MCO/BFCO users = no)", &c.leftAttack);
+        unsaved |= ImGuiMCP::Checkbox("Enable Alt Block is (power)Bashing if left key is block", &c.altBlockBash);
         ImGuiMCP::BeginDisabled(c.altBlockBash);
         {   
             //ImGuiMCP::TextUnformatted("Alt Block is Bashing if LeftHanded Block is available.");
@@ -228,7 +218,7 @@ namespace settings {
 
         if (capturing == CaptureTarget::AltBlock) {
             ImGuiMCP::SameLine();
-            ImGuiMCP::TextUnformatted("Press a key... (ESC = unbind)");
+            ImGuiMCP::TextUnformatted("Press a key... (ESC = unbind which disables)");
         } else if (capturing == CaptureTarget::None) {
             if (ImGuiMCP::Button("Rebind AltBlock")) {
                 startCapture(CaptureTarget::AltBlock);
@@ -244,13 +234,13 @@ namespace settings {
 
         if (capturing == CaptureTarget::Modifier) {
             ImGuiMCP::SameLine();
-            ImGuiMCP::TextUnformatted("Press a key... (ESC = unbind)");
+            ImGuiMCP::TextUnformatted("Press a key... (ESC = unbind which disables modifier key)");
         } else if (capturing == CaptureTarget::None) {
             if (ImGuiMCP::Button("Rebind Modifier")) {
                 startCapture(CaptureTarget::Modifier);
             }
             ImGuiMCP::SameLine();
-            if (ImGuiMCP::Button("Unbind Modifier")) {
+            if (ImGuiMCP::Button("Unbind Modifier (disables modifier key being needed)")) {
                 c.modifierKey = -1;
             }
         }
@@ -262,11 +252,9 @@ namespace settings {
 
         // block cancelling stuff
         unsaved |= ImGuiMCP::Checkbox("Enable Block Cancelling Stamina Cost", &c.enableBlockCancel);
-        /*unsaved |= ImGuiMCP::Checkbox("No Stamina Cost During MCO_Recovery?", &c.allowMCORecovery);
-        unsaved |= ImGuiMCP::DragFloat("Block Cancel Cost", &c.blockCancelCost, 1.0f, 0.0f, 50.0f, "%.2f");*/
         ImGuiMCP::BeginDisabled(!c.enableBlockCancel);
         {   
-            unsaved |= ImGuiMCP::Checkbox("No Stamina Cost During MCO_Recovery", &c.allowMCORecovery);
+            unsaved |= ImGuiMCP::Checkbox("Enable No cost during MCO_Recovery", &c.allowMCORecovery);
             unsaved |= ImGuiMCP::DragFloat("Block Cancel Cost", &c.blockCancelCost, 1.0f, 0.0f, 50.0f, "%.2f");
         }
         ImGuiMCP::EndDisabled();
@@ -276,7 +264,16 @@ namespace settings {
         }
         
         unsaved |= ImGuiMCP::Checkbox("Enable Alt Block for Mages? (Requires behavior patch)", &c.mageBlock);
-        //unsaved |= ImGuiMCP::Checkbox("Enable Mage Bashing?", &c.mageBash);
+        ImGuiMCP::BeginDisabled(!c.mageBlock);
+        {
+            // unsaved |= ImGuiMCP::Checkbox("Enable Mage Bashing?", &c.mageBash);
+            if (c.mageBlock) {
+                ImGuiMCP::TextUnformatted("Favorite only 1 ward! Only the first ward found will be cast.");
+            }
+            unsaved |= ImGuiMCP::Checkbox("Enable Mage block casts favorited ward", &c.mageWard);
+        }
+        ImGuiMCP::EndDisabled();
+        
         unsaved |= ImGuiMCP::Checkbox("Enable Log", &c.log);
 
         if (ImGuiMCP::Button("Save")) {

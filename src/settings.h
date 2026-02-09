@@ -15,6 +15,7 @@ namespace settings {
         bool mageBash = true;
         bool altBlockBash = true;
         float powerBashDelay = 0.2f;
+        bool mageWard = true;
 	};
 
 	config& Get();
@@ -30,6 +31,7 @@ namespace settings {
     inline bool allowMCORecovery() { return Get().allowMCORecovery; }
     inline bool mageBlock() { return Get().mageBlock; }
     inline bool mageBash() { return Get().mageBash; }
+    inline bool mageWard() { return Get().mageWard; }
     inline int altBlockBash() { return Get().altBlockBash; }
     inline float powerBashDelay() { return Get().powerBashDelay; }
 

@@ -19,7 +19,7 @@ namespace block {
                 return RE::BSEventNotifyControl::kContinue;
             }
 
-            if (settings::mageBlock() && a_event->tag == "blockStartOut"sv) {
+            if (settings::mageBlock() && settings::mageWard() && a_event->tag == "blockStartOut"sv) {
                 if (auto* player = RE::PlayerCharacter::GetSingleton()) {
                     if (utils::isRightHandCaster(player)) {
                         utils::castWardSpell(player);
