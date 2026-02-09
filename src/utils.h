@@ -33,6 +33,7 @@ namespace utils {
     bool tryBlockIdle(RE::PlayerCharacter* pc);
     bool tryBashStart(RE::PlayerCharacter* pc);
     bool tryBashRelease(RE::PlayerCharacter* pc);
+    bool tryBashPowerStart(RE::PlayerCharacter* pc);
 
     bool isPlayerBlocking();
     
@@ -110,5 +111,5 @@ namespace utils {
         sound::play_sound(player, wardSound);
     }
 
-    void dampVelocity(RE::PlayerCharacter* player, float horizontalScale);
+    //void dampVelocity(RE::PlayerCharacter* player, float horizontalScale);
 }

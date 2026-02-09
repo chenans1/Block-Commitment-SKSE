@@ -7,7 +7,8 @@
 //largely adapted from Dual Wield Parrying SKSE
 //https://github.com/DennisSoemers/DualWieldParryingSKSE/blob/main/src/InputEventHandler.cpp
 
-static bool isUIClosed(RE::UI* ui) { 
+static bool isUIClosed() { 
+    const auto ui = RE::UI::GetSingleton();
     if (ui && !ui->GameIsPaused() && !ui->IsApplicationMenuOpen() && !ui->IsItemMenuOpen() 
         && !ui->IsMenuOpen(RE::InterfaceStrings::GetSingleton()->dialogueMenu)) {
         return true;
@@ -38,6 +39,8 @@ static bool areControlsEnabled() {
 
 namespace altBlock {
     static bool modifierKeyHeld = false;
+    static bool isBashing = false;
+
     static bool isModRequired() { 
         const int modifierKey = settings::getModifierKey();
         return (modifierKey > 0 && modifierKey < 300);
@@ -50,7 +53,7 @@ namespace altBlock {
         }
         //check if the game is paused, in ui, or else:
         const auto ui = RE::UI::GetSingleton();
-        if (!isUIClosed(ui) || !areControlsEnabled()) {
+        if (!isUIClosed() || !areControlsEnabled()) {
             return RE::BSEventNotifyControl::kContinue;
         }
         auto* player = RE::PlayerCharacter::GetSingleton();
@@ -78,8 +81,8 @@ namespace altBlock {
             return RE::BSEventNotifyControl::kContinue;
         }*/
         //disable the altblock if you don't need it to block
-        if (settings::isDoubleBindDisabled() && utils::isLeftKeyBlock(player)) {
-            if (settings::log()) SKSE::log::info("left key is block, no double binds - alt block denied");
+        if (settings::isDoubleBindDisabled() && utils::isLeftKeyBlock(player) && !settings::altBlockBash()) {
+            if (settings::log()) SKSE::log::info("left key is block, altBash Disabled, no double binds - alt block denied");
             return RE::BSEventNotifyControl::kContinue;
         }
         const int bind = settings::getAltBlock();
@@ -110,31 +113,60 @@ namespace altBlock {
             if (macro != bind) continue;
             
             //if not blocking, then start blocking
-            bool isBlocking = false;
+            /*bool isBlocking = false;
             if (!player->GetGraphVariableBool("IsBlocking", isBlocking)) {
                 return RE::BSEventNotifyControl::kContinue;
-            }
+            }*/
             // now we finally actually check if we are blocking.
             auto* st = player->AsActorState();
             if (!st) { return RE::BSEventNotifyControl::kContinue; }
             auto* blockController = blockCommit::Controller::GetSingleton();
-           
+            const bool bashInstead = settings::altBlockBash() && utils::isLeftKeyBlock(player);
             if (btn->IsDown()) {
                 if (needsModifier && !modifierKeyHeld) {
                     if (settings::log()) SKSE::log::info("Mod={} not held, no block", modifierKey);
                     return RE::BSEventNotifyControl::kContinue;
                 }               
                 //st->actorState2.wantBlocking = 1;
+                //do nothing due to attack data won't be updated properly, need to fix this separately some other time
+                if (bashInstead && player->IsAttacking()) {
+                    return RE::BSEventNotifyControl::kContinue;
+                }
                 if (utils::tryBlockIdle(player)) {
                     if (settings::log()) SKSE::log::info("[altBlock] tryBlockIdle Sucessful");
                     st->actorState2.wantBlocking = 1;
-                    blockController->beginAltBlock();
+                    if (bashInstead) {
+                        if (utils::tryBashStart(player)) {
+                            isBashing = true;
+                            //utils::tryBashRelease(player);
+                        }
+                    } else {
+                        blockController->beginAltBlock();
+                    }
                     //return RE::BSEventNotifyControl::kContinue;
                 }
-                /*if (settings::log()) SKSE::log::info("[altBlock] tryBlockIdleFailed");
-                st->actorState2.wantBlocking = 1;*/
+            } else if (btn->IsPressed() && btn->HeldDuration() >= settings::powerBashDelay()) {
+                if (bashInstead && isBashing) {
+                    utils::tryBashPowerStart(player);
+                    player->NotifyAnimationGraph("blockStop");
+                    st->actorState2.wantBlocking = 0;
+                    isBashing = false;
+                }
             } else if (btn->IsUp()) {
-                blockController->wantReleaseAltBlock();
+                if (!bashInstead) {
+                    blockController->wantReleaseAltBlock();
+                } else {
+                    if (isBashing) {
+                        if (btn->HeldDuration() < settings::powerBashDelay()) {
+                            utils::tryBashRelease(player);
+                        }
+                    }
+                    if (player->IsBlocking()) {
+                        player->NotifyAnimationGraph("blockStop");
+                    }
+                    st->actorState2.wantBlocking = 0;
+                }
+                isBashing = false;
             }
             //return RE::BSEventNotifyControl::kContinue;
         }

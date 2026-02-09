@@ -13,7 +13,8 @@ namespace settings {
         bool allowMCORecovery = true;
         bool mageBlock = true;
         bool mageBash = true;
-        bool replaceLeftBlockWithBash = true;
+        bool altBlockBash = true;
+        float powerBashDelay = 0.2f;
 	};
 
 	config& Get();
@@ -29,7 +30,8 @@ namespace settings {
     inline bool allowMCORecovery() { return Get().allowMCORecovery; }
     inline bool mageBlock() { return Get().mageBlock; }
     inline bool mageBash() { return Get().mageBash; }
-    inline int replaceLeftWBash() { return Get().replaceLeftBlockWithBash; }
+    inline int altBlockBash() { return Get().altBlockBash; }
+    inline float powerBashDelay() { return Get().powerBashDelay; }
 
     void RegisterMenu();
     void __stdcall RenderMenuPage();

@@ -126,7 +126,8 @@ namespace settings {
         c.mageBlock = ini_bool(ini, "general", "mageBlock", c.mageBlock);
         c.mageBash = ini_bool(ini, "general", "mageBash", c.mageBash);
         //c.isSBF = ini_bool(ini, "general", "isSBF", c.isSBF);
-        //c.replaceLeftBlockWithBash = ini_bool(ini, "general", "replaceLeftBlockWithBash", c.replaceLeftBlockWithBash);
+        c.altBlockBash = ini_bool(ini, "general", "altBlockBash", c.altBlockBash);
+        c.powerBashDelay = ini_float(ini, "general", "powerBashDelay", c.powerBashDelay);
 
         log::info("Settings Loaded: commitDuration={}, isLeftAttack={}, allowBlockDoubleBind={}", 
             c.commitDuration, c.leftAttack, c.isDoubleBindDisabled);
@@ -153,8 +154,8 @@ namespace settings {
         ini.SetLongValue("general", "mageBlock", c.mageBlock ? 1 : 0);
         ini.SetLongValue("general", "mageBash", c.mageBash ? 1 : 0);
         //ini.SetLongValue("general", "isSBF", c.isSBF ? 1 : 0);
-        //ini.SetLongValue("general", "replaceLeftBlockWithBash", c.replaceLeftBlockWithBash ? 1 : 0);
-
+        ini.SetLongValue("general", "altBlockBash", c.altBlockBash ? 1 : 0);
+        ini.SetDoubleValue("general", "powerBashDelay", static_cast<double>(c.powerBashDelay), "%.3f");
 
         const SI_Error rc = ini.SaveFile(path);
         if (rc < 0) {
@@ -212,11 +213,8 @@ namespace settings {
         }
 
         // block cancelling stuff
-        //ImGuiMCP::Separator();
-        
-
         unsaved |= ImGuiMCP::Checkbox("Enable Block Cancelling Stamina Cost", &c.enableBlockCancel);
-       /* unsaved |= ImGuiMCP::Checkbox("No Stamina Cost During MCO_Recovery?", &c.allowMCORecovery);
+        /*unsaved |= ImGuiMCP::Checkbox("No Stamina Cost During MCO_Recovery?", &c.allowMCORecovery);
         unsaved |= ImGuiMCP::DragFloat("Block Cancel Cost", &c.blockCancelCost, 1.0f, 0.0f, 50.0f, "%.2f");*/
         ImGuiMCP::BeginDisabled(!c.enableBlockCancel);
         {
@@ -224,14 +222,21 @@ namespace settings {
             unsaved |= ImGuiMCP::DragFloat("Block Cancel Cost", &c.blockCancelCost, 1.0f, 0.0f, 50.0f, "%.2f");
         }
         ImGuiMCP::EndDisabled();
+
         if (!c.enableBlockCancel) {
             ImGuiMCP::TextUnformatted("Enable Block Cancelling to edit these options.");
         }
         
         unsaved |= ImGuiMCP::Checkbox("Enable Alt Block for Mages? (Requires behavior patch)", &c.mageBlock);
         //unsaved |= ImGuiMCP::Checkbox("Enable Mage Bashing?", &c.mageBash);
-        // unsaved |= ImGuiMCP::Checkbox("Replace left block with Bash?", &c.replaceLeftBlockWithBash);
-        //ImGuiMCP::Separator();
+        unsaved |= ImGuiMCP::Checkbox("Alt Blocking is Bashing if left input is Block?", &c.altBlockBash);
+        ImGuiMCP::BeginDisabled(!c.altBlockBash);
+        {   
+            ImGuiMCP::TextUnformatted("If powerBashDelay is too high, normal bash will always be fired.");
+            unsaved |= ImGuiMCP::DragFloat("Hold Duration for powerBash", &c.powerBashDelay, 0.01f, 0.0f, 0.25f, "%.2f");
+        }
+        ImGuiMCP::EndDisabled();
+
         unsaved |= ImGuiMCP::Checkbox("Enable Log", &c.log);
 
         if (ImGuiMCP::Button("Save")) {
@@ -247,8 +252,6 @@ namespace settings {
         if (unsaved) {
             ImGuiMCP::TextUnformatted("Unsaved changes");
         }
-        
-        
     }
 
     void RegisterMenu() {

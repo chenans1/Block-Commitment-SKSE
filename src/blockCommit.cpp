@@ -85,7 +85,6 @@ namespace blockCommit {
                 _state.blockDuration, (settings::getCommitDur() - _state.blockDuration));
         }
         _state.wantStop = true;
-
         return true;
     }
 
