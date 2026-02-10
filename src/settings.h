@@ -16,6 +16,9 @@ namespace settings {
         bool altBlockBash = true;
         float powerBashDelay = 0.2f;
         bool mageWard = true;
+        bool forceMCORecovery = true;
+        float powerAttackBlockCancelCost = 10.0f;
+
 	};
 
 	config& Get();
@@ -34,7 +37,8 @@ namespace settings {
     inline bool mageWard() { return Get().mageWard; }
     inline int altBlockBash() { return Get().altBlockBash; }
     inline float powerBashDelay() { return Get().powerBashDelay; }
-
+    inline bool MCORecoveryCancel() { return Get().forceMCORecovery; }
+    inline float PACancelCost() { return Get().powerAttackBlockCancelCost; }
     void RegisterMenu();
     void __stdcall RenderMenuPage();
 

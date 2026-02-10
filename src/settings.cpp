@@ -144,6 +144,7 @@ namespace settings {
         c.modifierKey = static_cast<int>(ini.GetLongValue("general", "modifierKey", c.modifierKey));
         c.isDoubleBindDisabled = ini_bool(ini, "general", "allowBlockDoubleBind", c.isDoubleBindDisabled);
         c.blockCancelCost = ini_float(ini, "general", "blockCancelCost", c.blockCancelCost);
+        c.powerAttackBlockCancelCost = ini_float(ini, "general", "powerAttackBlockCancelCost", c.powerAttackBlockCancelCost);
         c.enableBlockCancel = ini_bool(ini, "general", "enableBlockCancel", c.enableBlockCancel);
         c.allowMCORecovery = ini_bool(ini, "general", "allowMCORecovery", c.allowMCORecovery);
         c.mageBlock = ini_bool(ini, "general", "mageBlock", c.mageBlock);
@@ -151,6 +152,7 @@ namespace settings {
         //c.mageBash = ini_bool(ini, "general", "mageBash", c.mageBash);
         c.altBlockBash = ini_bool(ini, "general", "altBlockBash", c.altBlockBash);
         c.powerBashDelay = ini_float(ini, "general", "powerBashDelay", c.powerBashDelay);
+        c.forceMCORecovery = ini_bool(ini, "general", "forceMCORecovery", c.forceMCORecovery);
 
         log::info("Settings Loaded: commitDuration={}, isLeftAttack={}, allowBlockDoubleBind={}", 
             c.commitDuration, c.leftAttack, c.isDoubleBindDisabled);
@@ -172,6 +174,7 @@ namespace settings {
         ini.SetLongValue("general", "modifierKey", c.modifierKey);
         ini.SetLongValue("general", "isDoubleBindDisabled", c.isDoubleBindDisabled ? 1 : 0);
         ini.SetDoubleValue("general", "blockCancelCost", static_cast<double>(c.blockCancelCost), "%.3f");
+        ini.SetDoubleValue("general", "powerAttackBlockCancelCost", static_cast<double>(c.powerAttackBlockCancelCost), "%.3f");
         ini.SetLongValue("general", "enableBlockCancel", c.enableBlockCancel ? 1 : 0);
         ini.SetLongValue("general", "allowMCORecovery", c.allowMCORecovery ? 1 : 0);
         ini.SetLongValue("general", "mageBlock", c.mageBlock ? 1 : 0);
@@ -179,6 +182,7 @@ namespace settings {
         /*ini.SetLongValue("general", "mageBash", c.mageBash ? 1 : 0);*/
         ini.SetLongValue("general", "altBlockBash", c.altBlockBash ? 1 : 0);
         ini.SetDoubleValue("general", "powerBashDelay", static_cast<double>(c.powerBashDelay), "%.3f");
+        ini.SetLongValue("general", "forceMCORecovery", c.forceMCORecovery ? 1 : 0);
 
         const SI_Error rc = ini.SaveFile(path);
         if (rc < 0) {
@@ -194,6 +198,8 @@ namespace settings {
         static bool unsaved = false;
         unsaved |= ImGuiMCP::DragFloat("Block Commitment Duration (Seconds)", &c.commitDuration, 0.01f, 0.0f, 5.0f, "%.2f");
         unsaved |= ImGuiMCP::Checkbox("For dual wield/unarmed is left key attack? (MCO/BFCO users = no)", &c.leftAttack);
+        unsaved |= ImGuiMCP::Checkbox("Enable Force blockStart (attack cancel) during MCO Recovery", &c.forceMCORecovery);
+
         unsaved |= ImGuiMCP::Checkbox("Enable Alt Block is (power)Bashing if left key is block", &c.altBlockBash);
         ImGuiMCP::BeginDisabled(c.altBlockBash);
         {   
@@ -256,6 +262,7 @@ namespace settings {
         {   
             unsaved |= ImGuiMCP::Checkbox("Enable No cost during MCO_Recovery", &c.allowMCORecovery);
             unsaved |= ImGuiMCP::DragFloat("Block Cancel Cost", &c.blockCancelCost, 1.0f, 0.0f, 50.0f, "%.2f");
+            unsaved |= ImGuiMCP::DragFloat("Power Attack Block Cancel Cost", &c.powerAttackBlockCancelCost, 1.0f, 0.0f, 50.0f, "%.2f");
         }
         ImGuiMCP::EndDisabled();
 

@@ -120,12 +120,24 @@ namespace altBlock {
                     if (settings::log()) SKSE::log::info("Mod={} not held, no block", modifierKey);
                     return RE::BSEventNotifyControl::kContinue;
                 }               
-                //st->actorState2.wantBlocking = 1;
                 //do nothing due to attack data won't be updated properly, need to fix this separately some other time
                 if (bashInstead && player->IsAttacking()) {
                     return RE::BSEventNotifyControl::kContinue;
                 }
                 if (!bashInstead) blockController->beginAltBlock();
+                if (settings::MCORecoveryCancel()) {
+                    bool MCO_IsInRecovery = false;
+                    if (player->GetGraphVariableBool("MCO_IsInRecovery", MCO_IsInRecovery) && MCO_IsInRecovery) {
+                        if (!player->IsBlocking()) {
+                            if (settings::log()) SKSE::log::info("[altBlock]: MCO recovery force blockStart");
+                                //player->NotifyAnimationGraph("MCO_EndAnimation");
+                            player->NotifyAnimationGraph("blockStart");
+                            st->actorState2.wantBlocking = 1;
+                        }
+                        //st->actorState2.wantBlocking = 1;
+                        //return RE::BSEventNotifyControl::kContinue;
+                    }
+                }
                 if (utils::tryBlockIdle(player)) {
                     if (settings::log()) SKSE::log::info("[altBlock] tryBlockIdle Sucessful");
                     st->actorState2.wantBlocking = 1;
@@ -133,17 +145,23 @@ namespace altBlock {
                         if (utils::tryBashStart(player)) {
                             isBashing = true;
                         }
-                    } /*else {
-                        blockController->beginAltBlock();
-                    }*/
+                    }
                 }
                 return RE::BSEventNotifyControl::kContinue;
-            } else if (btn->IsPressed() && btn->HeldDuration() >= settings::powerBashDelay()) {
-                if (bashInstead && isBashing) {
+            } else if (btn->IsPressed()) {
+                if (bashInstead && isBashing && btn->HeldDuration() >= settings::powerBashDelay()) {
                     utils::tryBashPowerStart(player);
                     player->NotifyAnimationGraph("blockStop");
                     st->actorState2.wantBlocking = 0;
                     isBashing = false;
+                } else if (!bashInstead && settings::MCORecoveryCancel()) {
+                    bool MCO_IsInRecovery = false;
+                    if (player->GetGraphVariableBool("MCO_IsInRecovery", MCO_IsInRecovery) && MCO_IsInRecovery) {
+                        if (!player->IsBlocking()) {
+                            player->NotifyAnimationGraph("blockStart");
+                        }
+                        st->actorState2.wantBlocking = 1;
+                    }
                 }
             } else if (btn->IsUp()) {
                 if (!bashInstead) {

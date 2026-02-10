@@ -173,12 +173,12 @@ namespace utils {
         return false;
     }
 
-    void consumeStamina(RE::PlayerCharacter* player) {
+    void consumeStamina(RE::PlayerCharacter* player, float amount) {
         if (!player) return;
         auto* actorAV = player->AsActorValueOwner();
         if (actorAV) {
-            actorAV->DamageActorValue(RE::ActorValue::kStamina, settings::blockCancelCost());
-            SKSE::log::info("Damaged stamina={}", settings::blockCancelCost());
+            actorAV->DamageActorValue(RE::ActorValue::kStamina, amount);
+            if (settings::log()) SKSE::log::info("Damaged stamina={}", amount);
         }
     }
 
@@ -198,11 +198,16 @@ namespace utils {
         //  now we need to check if attacking
         auto* playerState = player->AsActorState();
         if (playerState) {
+            const bool isPowerAttacking = player->IsPowerAttacking();
+            if (isPowerAttacking) {
+                consumeStamina(player, settings::PACancelCost());
+                return;
+            }
             const bool isAttacking = player->IsAttacking();
             if (isAttacking) {
-                consumeStamina(player);
+                consumeStamina(player, settings::blockCancelCost());
+                return;
             }
-            return;
         }
     }
 
