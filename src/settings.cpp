@@ -137,6 +137,7 @@ namespace settings {
         }
 
         auto& c = Get();
+        c.enableBlockCommitment = ini_bool(ini, "general", "enableBlockCommitment", c.enableBlockCommitment);
         c.commitDuration = ini_float(ini, "general", "commitDuration", c.commitDuration);
         c.log = ini_bool(ini, "general", "enableLog", c.log);
         c.leftAttack = ini_bool(ini, "general", "isLeftAttack", c.leftAttack);
@@ -153,6 +154,7 @@ namespace settings {
         c.altBlockBash = ini_bool(ini, "general", "altBlockBash", c.altBlockBash);
         c.powerBashDelay = ini_float(ini, "general", "powerBashDelay", c.powerBashDelay);
         c.forceMCORecovery = ini_bool(ini, "general", "forceMCORecovery", c.forceMCORecovery);
+        
 
         log::info("Settings Loaded: commitDuration={}, isLeftAttack={}, allowBlockDoubleBind={}", 
             c.commitDuration, c.leftAttack, c.isDoubleBindDisabled);
@@ -167,6 +169,7 @@ namespace settings {
         // on fail create new file
         (void)ini.LoadFile(path);
 
+        ini.SetLongValue("general", "enableBlockCommitment", c.enableBlockCommitment ? 1 : 0);
         ini.SetDoubleValue("general", "commitDuration", static_cast<double>(c.commitDuration), "%.3f");
         ini.SetLongValue("general", "enableLog", c.log ? 1 : 0);
         ini.SetLongValue("general", "isLeftAttack", c.leftAttack ? 1 : 0);
@@ -183,6 +186,7 @@ namespace settings {
         ini.SetLongValue("general", "altBlockBash", c.altBlockBash ? 1 : 0);
         ini.SetDoubleValue("general", "powerBashDelay", static_cast<double>(c.powerBashDelay), "%.3f");
         ini.SetLongValue("general", "forceMCORecovery", c.forceMCORecovery ? 1 : 0);
+        
 
         const SI_Error rc = ini.SaveFile(path);
         if (rc < 0) {
@@ -196,8 +200,13 @@ namespace settings {
     void __stdcall RenderMenuPage() { 
         auto& c = Get();
         static bool unsaved = false;
-        unsaved |= ImGuiMCP::DragFloat("Block Commitment Duration (Seconds)", &c.commitDuration, 0.01f, 0.0f, 5.0f, "%.2f");
-        unsaved |= ImGuiMCP::Checkbox("For dual wield/unarmed is left key attack? (MCO/BFCO users = no)", &c.leftAttack);
+        unsaved |= ImGuiMCP::Checkbox("Enable Block Commitment", &c.enableBlockCommitment);
+        ImGuiMCP::BeginDisabled(!c.enableBlockCommitment);
+        {
+            unsaved |= ImGuiMCP::DragFloat("Block Commitment Duration (Seconds)", &c.commitDuration, 0.01f, 0.0f, 5.0f, "%.2f");
+        }
+        ImGuiMCP::EndDisabled();
+        unsaved |= ImGuiMCP::Checkbox("For dual wield/unarmed is left key attack? (MCO/BFCO, No)", &c.leftAttack);
         unsaved |= ImGuiMCP::Checkbox("Enable Force blockStart (attack cancel) during MCO Recovery", &c.forceMCORecovery);
 
         unsaved |= ImGuiMCP::Checkbox("Enable Alt Block is (power)Bashing if left key is block", &c.altBlockBash);

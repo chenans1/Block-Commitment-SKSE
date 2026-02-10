@@ -3,6 +3,7 @@
 namespace settings {
 	struct config {
         bool log = false;
+        bool enableBlockCommitment = true;
         float commitDuration = 0.5f;
         bool leftAttack = false;
         int altBlockKey = -1;
@@ -39,6 +40,8 @@ namespace settings {
     inline float powerBashDelay() { return Get().powerBashDelay; }
     inline bool MCORecoveryCancel() { return Get().forceMCORecovery; }
     inline float PACancelCost() { return Get().powerAttackBlockCancelCost; }
+    inline bool blockCommitOn() { return Get().enableBlockCommitment; }
+
     void RegisterMenu();
     void __stdcall RenderMenuPage();
 

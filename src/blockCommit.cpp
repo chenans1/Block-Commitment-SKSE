@@ -28,6 +28,10 @@ namespace blockCommit {
     }
 
     void Controller::beginAltBlock() {
+        if (!settings::blockCommitOn()) {
+            if (settings::log()) SKSE::log::info("[blockCommit]: beginAltBlock do nothing, block commit off");
+            return;
+        }
         if (settings::log()) SKSE::log::info("[blockCommit]: beginAltBlock");
         _state.altBlockMode = true;
         _state.wantStop = false;
@@ -37,6 +41,10 @@ namespace blockCommit {
     // use pending altblock mode to prevent mixing up block input
     // fetch the input key types here
     void Controller::beginLeftBlock() {
+        if (!settings::blockCommitOn()) {
+            if (settings::log()) SKSE::log::info("[blockCommit]: beginLeftBlock do nothing, block commit off");
+            return;
+        }
         if (settings::log()) SKSE::log::info("[blockCommit]: beginLeftBlock");
         _state.altBlockMode = false;
         _state.wantStop = false;
@@ -44,9 +52,14 @@ namespace blockCommit {
     }
 
 	void Controller::wantReleaseAltBlock() {
-        if (_state.blockDuration >= settings::getCommitDur()) {
+        //just release if blockCommit is OFF
+        if (_state.blockDuration >= settings::getCommitDur() || !settings::blockCommitOn()) {
             if (settings::log()) {
-                SKSE::log::info("[wantReleaseAltBlock] allow release: block duration={}", _state.blockDuration);
+                if (settings::blockCommitOn()) {
+                    SKSE::log::info("[wantReleaseAltBlock] allow release: block duration={}", _state.blockDuration);
+                } else {
+                    SKSE::log::info("[wantReleaseAltBlock] allow release: block commit is off");
+                }
             }
             _state.wantStop = false;
             _state.blockDuration = 0.0f;
@@ -62,6 +75,15 @@ namespace blockCommit {
 
     //returns true/false to decide if we swallow input
     bool Controller::wantReleaseLeftBlock() { 
+        //if block commit off: always return false
+        if (!settings::blockCommitOn()) {
+            if (settings::log()) {
+                SKSE::log::info("[wantReleaseLeftBlock] allow release: block commit is off");
+            }
+            _state.wantStop = false;
+            _state.blockDuration = 0.0f;
+            return false;
+        }
         auto* player = RE::PlayerCharacter::GetSingleton();
         if (player && !player->IsBlocking()) {
             if (settings::log()) {
