@@ -14,7 +14,6 @@ namespace notify {
                 if (settings::isBlockCancelEnabled()) {
                     utils::resolveBlockCancel(player);
                 }
-                //utils::dampVelocity(player, 0.0f);
             }
         } else if (a_eventName == "blockStop") {            
             if (auto* player = RE::PlayerCharacter::GetSingleton()) {
