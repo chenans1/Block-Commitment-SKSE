@@ -210,12 +210,6 @@ namespace settings {
         unsaved |= ImGuiMCP::Checkbox("Enable Force blockStart (attack cancel) during MCO Recovery", &c.forceMCORecovery);
 
         unsaved |= ImGuiMCP::Checkbox("Enable Alt Block is (power)Bashing if left key is block", &c.altBlockBash);
-        ImGuiMCP::BeginDisabled(c.altBlockBash);
-        {   
-            //ImGuiMCP::TextUnformatted("Alt Block is Bashing if LeftHanded Block is available.");
-            unsaved |= ImGuiMCP::Checkbox("Disable alt block if left is already block?", &c.isDoubleBindDisabled);
-        }
-        ImGuiMCP::EndDisabled();
         ImGuiMCP::BeginDisabled(!c.altBlockBash);
         {
             float fMinBashDelay = getPowerBashDelay();
@@ -223,6 +217,13 @@ namespace settings {
             ImGuiMCP::Text("powerBashDelay must be >= fInitialPowerBashDelay: %.2f", fMinBashDelay);
             unsaved |= ImGuiMCP::DragFloat("Hold Duration for powerBash", 
                 &c.powerBashDelay, 0.01f, fMinBashDelay, 0.5f, "%.2f");
+        }
+        ImGuiMCP::EndDisabled();
+
+        ImGuiMCP::BeginDisabled(c.altBlockBash);
+        {
+            ImGuiMCP::TextUnformatted("Disable altblock bashing to enable this option.");
+            unsaved |= ImGuiMCP::Checkbox("Disable alt block if left is already block?", &c.isDoubleBindDisabled);
         }
         ImGuiMCP::EndDisabled();
 

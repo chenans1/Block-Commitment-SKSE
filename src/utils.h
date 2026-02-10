@@ -39,7 +39,7 @@ namespace utils {
     
     bool isRightHandCaster(RE::PlayerCharacter* player);
 
-    inline void consumeStamina(RE::PlayerCharacter* player);
+    inline void consumeStamina(RE::PlayerCharacter* player, float amount);
 
     inline bool isWard(const RE::SpellItem* spell) {
         if (!spell) {
