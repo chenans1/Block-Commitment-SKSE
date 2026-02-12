@@ -73,7 +73,7 @@ namespace utils {
         const auto* rightWeap = rightForm ? rightForm->As<RE::TESObjectWEAP>() : nullptr;
         const auto* leftWeap = leftForm ? leftForm->As<RE::TESObjectWEAP>() : nullptr;
         const auto* leftShield = leftForm ? leftForm->As<RE::TESObjectARMO>() : nullptr;
-
+        
         // shield: always can block
         if (leftShield) {
             // log::info("shield equipped");
@@ -87,8 +87,8 @@ namespace utils {
         // you can't block without a weapon in the right hand
         if (!rightWeap) {
             // log::info("no right handed weapon");
-            //verify it's unarmed, if MCO/BFCO we can block, if not:
-            if (!rightForm && !settings::leftAttack()) {
+            //both hands need to be unarmed for MCO, if not:
+            if (!rightForm && !leftForm && !settings::leftAttack()) {
                 return true;
             }
             return false;
@@ -101,16 +101,31 @@ namespace utils {
             return true;
         }
 
+        //unique H2H case: fists, afaik only used in brawls?
+        if (rType == RE::WeaponTypes::kHandToHandMelee) {
+            if (!leftForm) {
+                return true;
+            }
+            if (leftWeap) {
+                if (leftWeap->GetWeaponType() == RE::WeaponTypes::kHandToHandMelee) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
         // 2: if right hand isn't 1h and isn't 2h then we return false;
-        const bool validRight = (rType >= RE::WeaponTypes::kHandToHandMelee && rType <= RE::WeaponTypes::kOneHandMace);
+        const bool validRight = (rType >= RE::WeaponTypes::kOneHandSword && rType <= RE::WeaponTypes::kOneHandMace);
         if (!validRight) {
             // log::info("invalid right hand type");
             return false;
         }
+
         //so we haev a 1h weapon and empty left hand: return true
         if (!leftForm) {
             return true;
         }
+
         // now check left, make sure it's either unarmed or one handed
         if (leftWeap) {
             const auto lType = leftWeap->GetWeaponType();
