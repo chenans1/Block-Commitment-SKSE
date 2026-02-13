@@ -14,6 +14,11 @@ namespace utils {
     inline RE::TESIdleForm* bashReleaseIdle;
     inline RE::TESIdleForm* bashPowerStart;
 
+    bool checkFirstPerson() {
+        auto* camera = RE::PlayerCamera::GetSingleton();
+        return camera && camera->currentState->id == RE::CameraState::kFirstPerson;
+    }
+
     void initKeyword() { 
         bool expected = false;
         if (!kywdCache.compare_exchange_strong(expected, true)) {
@@ -83,11 +88,15 @@ namespace utils {
             }
             return true;
         }
-        
+        const bool isFP = checkFirstPerson();
         // you can't block without a weapon in the right hand
         if (!rightWeap) {
             // log::info("no right handed weapon");
-            //both hands need to be unarmed for MCO, if not:
+            // check first person: unarmed cannot block normally
+            if (!rightForm && isFP) {
+                return false;
+            }
+            //both hands need to be unarmed for MCO/BFCO
             if (!rightForm && !leftForm && !settings::leftAttack()) {
                 return true;
             }
@@ -103,7 +112,10 @@ namespace utils {
 
         //unique H2H case: fists, afaik only used in brawls?
         if (rType == RE::WeaponTypes::kHandToHandMelee) {
-            if (!leftForm) {
+            if (isFP) {
+                return false;
+            }
+            if (!leftForm && !settings::leftAttack()) {
                 return true;
             }
             if (leftWeap) {
@@ -131,7 +143,7 @@ namespace utils {
             const auto lType = leftWeap->GetWeaponType();
             // if left = attack and right hand is 1h weapon then left hand must be empty
             //if (settings::leftAttack() && (lType != RE::WeaponTypes::kHandToHandMelee || !leftForm)) {
-            if (settings::leftAttack()) {
+            if (settings::leftAttack() || isFP) {
                 // log::info("left = attack, left hand is not unarmed/shield");
                 return false;
             }
