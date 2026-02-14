@@ -18,16 +18,73 @@ static float ini_float(CSimpleIniA& ini, const char* section, const char* key, f
 namespace settings {
     //some stuff to handle the capturing of the keybind since i think onInput just straight up always polls even if the menu is closed
     inline std::atomic_bool g_captureBind{false};
-    inline bool g_waitingRelease = false;
+
+    enum class CaptureTarget : std::uint8_t { None = 0, AltBlock, Modifier };
+    inline std::atomic<CaptureTarget> g_captureTarget{CaptureTarget::None};
+    inline std::atomic_bool g_waitingRelease{false};
+
+    static float iniPowerBashDelay = 0.30f;  
+    static bool iniPowerBashDelayLoaded = false;
+
+    static config cfg{};
+    config& Get() { return cfg; }
+
+    static float readPowerBashDelay() { 
+        auto* ini = RE::INISettingCollection::GetSingleton();
+        if (!ini) {
+            log::info("[settings] failed to fetch ini singleton");
+            return iniPowerBashDelay;
+        }
+        if (auto* s = ini->GetSetting("fInitialPowerBashDelay:Controls"); s) {
+            if (s->GetType() == RE::Setting::Type::kFloat) {
+                log::info("[settings] Found fInitialPowerBashDelay");
+                return s->GetFloat();
+            }
+        }
+        log::info("[settings] failed to find fInitialPowerBashDelay");
+        return iniPowerBashDelay;
+    }
+
+    float getPowerBashDelay() {
+        if (!iniPowerBashDelayLoaded) {
+            iniPowerBashDelay = readPowerBashDelay();
+            iniPowerBashDelayLoaded = true;
+        }
+        return iniPowerBashDelay;
+    }
+    static void startCapture(CaptureTarget target) { 
+        g_captureTarget.store(target, std::memory_order_release);
+        g_waitingRelease.store(true, std::memory_order_release);
+    }
+
+    static void stopCapture() {
+        g_captureTarget.store(CaptureTarget::None, std::memory_order_release);
+        g_waitingRelease.store(false, std::memory_order_release);
+    }
+
+    static void ApplyCapturedKey(CaptureTarget target, int keycode) {
+        auto& c = Get();
+        switch (target) {
+            case CaptureTarget::AltBlock:
+                c.altBlockKey = keycode;
+                break;
+            case CaptureTarget::Modifier:
+                c.modifierKey = keycode;
+                break;
+            default:
+                break;
+        }
+        stopCapture();
+    }
 
     //fetch the input and save it
     bool __stdcall OnInput(RE::InputEvent* event) {
-        bool blockInput = false;
-
-        // only cba if the user hit the rebind button
-        if (!g_captureBind.load(std::memory_order_acquire)) {
-            return blockInput;
+        const auto target = g_captureTarget.load(std::memory_order_acquire);
+        if (target == CaptureTarget::None) {
+            return false;
         }
+
+        bool blockInput = true;
 
         if (!event) {
             return blockInput;
@@ -38,30 +95,34 @@ namespace settings {
             return blockInput;
         }
 
-        if (!btn->IsDown()) {
-            // only cba the down press
-            if (g_waitingRelease) {
-                g_waitingRelease = false;
+        if (g_waitingRelease.load(std::memory_order_acquire)) {
+            if (!btn->IsDown()) {
+                g_waitingRelease.store(false, std::memory_order_release);
             }
             return blockInput;
+        }
+
+        if (btn->IsDown()) {
+            return blockInput;
+        }
+
+        // ESC = unbind and exit
+        if (btn->device.get() == RE::INPUT_DEVICE::kKeyboard) {
+            if (btn->GetIDCode() == 0x01) {
+                ApplyCapturedKey(target, -1);
+                return blockInput;
+            }
         }
 
         const int macro = toKeyCode(*btn);
 
         if (macro != 0) {
-            auto& c = Get();
-            c.altBlockKey = macro;
-
-            save();
-            g_captureBind.store(false, std::memory_order_release);
-            g_waitingRelease = true;
+            //auto& c = Get();
+            ApplyCapturedKey(target, macro);
         }
 
         return blockInput;
     }
-
-    static config cfg{};
-    config& Get() { return cfg; }
 
     void load() {
         constexpr auto path = "Data/SKSE/Plugins/blockOverhaul.ini";
@@ -71,18 +132,32 @@ namespace settings {
         const SI_Error rc = ini.LoadFile(path);
 
         if (rc < 0) {
-            // File missing or unreadable. Keep defaults in g_cfg.
             log::warn("Could not load ini '{}'. Using defaults.", path);
             return;
         }
 
         auto& c = Get();
+        c.enableBlockCommitment = ini_bool(ini, "general", "enableBlockCommitment", c.enableBlockCommitment);
         c.commitDuration = ini_float(ini, "general", "commitDuration", c.commitDuration);
         c.log = ini_bool(ini, "general", "enableLog", c.log);
         c.leftAttack = ini_bool(ini, "general", "isLeftAttack", c.leftAttack);
         c.altBlockKey = static_cast<int>(ini.GetLongValue("general", "altBlockKey", c.altBlockKey));
+        c.modifierKey = static_cast<int>(ini.GetLongValue("general", "modifierKey", c.modifierKey));
+        c.isDoubleBindDisabled = ini_bool(ini, "general", "allowBlockDoubleBind", c.isDoubleBindDisabled);
+        c.blockCancelCost = ini_float(ini, "general", "blockCancelCost", c.blockCancelCost);
+        c.powerAttackBlockCancelCost = ini_float(ini, "general", "powerAttackBlockCancelCost", c.powerAttackBlockCancelCost);
+        c.enableBlockCancel = ini_bool(ini, "general", "enableBlockCancel", c.enableBlockCancel);
+        c.allowMCORecovery = ini_bool(ini, "general", "allowMCORecovery", c.allowMCORecovery);
+        c.mageBlock = ini_bool(ini, "general", "mageBlock", c.mageBlock);
+        c.mageWard = ini_bool(ini, "general", "mageWard", c.mageWard);
+        //c.mageBash = ini_bool(ini, "general", "mageBash", c.mageBash);
+        c.altBlockBash = ini_bool(ini, "general", "altBlockBash", c.altBlockBash);
+        c.powerBashDelay = ini_float(ini, "general", "powerBashDelay", c.powerBashDelay);
+        c.forceMCORecovery = ini_bool(ini, "general", "forceMCORecovery", c.forceMCORecovery);
+        
 
-        log::info("Settings Loaded: commitDuration={}, isLeftAttack={}", c.commitDuration, c.leftAttack);
+        log::info("Settings Loaded: commitDuration={}, isLeftAttack={}, allowBlockDoubleBind={}", 
+            c.commitDuration, c.leftAttack, c.isDoubleBindDisabled);
     }
 
     void save() { 
@@ -94,10 +169,24 @@ namespace settings {
         // on fail create new file
         (void)ini.LoadFile(path);
 
+        ini.SetLongValue("general", "enableBlockCommitment", c.enableBlockCommitment ? 1 : 0);
         ini.SetDoubleValue("general", "commitDuration", static_cast<double>(c.commitDuration), "%.3f");
         ini.SetLongValue("general", "enableLog", c.log ? 1 : 0);
         ini.SetLongValue("general", "isLeftAttack", c.leftAttack ? 1 : 0);
         ini.SetLongValue("general", "altBlockKey", c.altBlockKey);
+        ini.SetLongValue("general", "modifierKey", c.modifierKey);
+        ini.SetLongValue("general", "isDoubleBindDisabled", c.isDoubleBindDisabled ? 1 : 0);
+        ini.SetDoubleValue("general", "blockCancelCost", static_cast<double>(c.blockCancelCost), "%.3f");
+        ini.SetDoubleValue("general", "powerAttackBlockCancelCost", static_cast<double>(c.powerAttackBlockCancelCost), "%.3f");
+        ini.SetLongValue("general", "enableBlockCancel", c.enableBlockCancel ? 1 : 0);
+        ini.SetLongValue("general", "allowMCORecovery", c.allowMCORecovery ? 1 : 0);
+        ini.SetLongValue("general", "mageBlock", c.mageBlock ? 1 : 0);
+        ini.SetLongValue("general", "mageWard", c.mageWard ? 1 : 0);
+        /*ini.SetLongValue("general", "mageBash", c.mageBash ? 1 : 0);*/
+        ini.SetLongValue("general", "altBlockBash", c.altBlockBash ? 1 : 0);
+        ini.SetDoubleValue("general", "powerBashDelay", static_cast<double>(c.powerBashDelay), "%.3f");
+        ini.SetLongValue("general", "forceMCORecovery", c.forceMCORecovery ? 1 : 0);
+        
 
         const SI_Error rc = ini.SaveFile(path);
         if (rc < 0) {
@@ -110,23 +199,113 @@ namespace settings {
 
     void __stdcall RenderMenuPage() { 
         auto& c = Get();
+        static bool unsaved = false;
+        unsaved |= ImGuiMCP::Checkbox("Enable Block Commitment", &c.enableBlockCommitment);
+        ImGuiMCP::BeginDisabled(!c.enableBlockCommitment);
+        {
+            unsaved |= ImGuiMCP::DragFloat("Block Commitment Duration (Seconds)", &c.commitDuration, 0.01f, 0.0f, 5.0f, "%.2f");
+        }
+        ImGuiMCP::EndDisabled();
+        unsaved |= ImGuiMCP::Checkbox("For dual wield/unarmed is left key attack? (MCO/BFCO, No)", &c.leftAttack);
+        unsaved |= ImGuiMCP::Checkbox("Enable Force blockStart (attack cancel) during MCO Recovery", &c.forceMCORecovery);
 
-        ImGuiMCP::DragFloat("Block Commitment Duration (Seconds)", &c.commitDuration, 0.01f, 0.0f, 5.0f, "%.2f");
+        unsaved |= ImGuiMCP::Checkbox("Enable Alt Block is (power)Bashing if left key is block", &c.altBlockBash);
+        ImGuiMCP::BeginDisabled(!c.altBlockBash);
+        {
+            float fMinBashDelay = getPowerBashDelay();
+            ImGuiMCP::TextUnformatted("If powerBashDelay is too high, normal bash will always be fired.");
+            ImGuiMCP::Text("powerBashDelay must be >= fInitialPowerBashDelay: %.2f", fMinBashDelay);
+            unsaved |= ImGuiMCP::DragFloat("Hold Duration for powerBash", 
+                &c.powerBashDelay, 0.01f, fMinBashDelay, 0.5f, "%.2f");
+        }
+        ImGuiMCP::EndDisabled();
 
+        ImGuiMCP::BeginDisabled(c.altBlockBash);
+        {
+            ImGuiMCP::TextUnformatted("Disable altblock bashing to enable this option.");
+            unsaved |= ImGuiMCP::Checkbox("Disable alt block if left is already block?", &c.isDoubleBindDisabled);
+        }
+        ImGuiMCP::EndDisabled();
+
+        const auto capturing = g_captureTarget.load(std::memory_order_acquire);
+
+        //unsaved |= ImGuiMCP::Separator();
         ImGuiMCP::Text("AltBlock Key: %d", c.altBlockKey);
-        if (!g_captureBind.load(std::memory_order_acquire)) {
-            if (ImGuiMCP::Button("Rebind")) {
-                g_captureBind.store(true, std::memory_order_release);
-            }
-        } else {
+
+        if (capturing == CaptureTarget::AltBlock) {
             ImGuiMCP::SameLine();
-            ImGuiMCP::TextUnformatted("Press any key / mouse button / gamepad button...");
-            if (ImGuiMCP::Button("Cancel")) {
-                g_captureBind.store(false, std::memory_order_release);
+            ImGuiMCP::TextUnformatted("Press a key... (ESC = unbind which disables)");
+        } else if (capturing == CaptureTarget::None) {
+            if (ImGuiMCP::Button("Rebind AltBlock")) {
+                startCapture(CaptureTarget::AltBlock);
+            }
+            ImGuiMCP::SameLine();
+            if (ImGuiMCP::Button("Unbind AltBlock")) {
+                c.altBlockKey = -1;
             }
         }
-        
 
+        //ImGuiMCP::Separator();
+        ImGuiMCP::Text("Modifier Key: %d", c.modifierKey);
+
+        if (capturing == CaptureTarget::Modifier) {
+            ImGuiMCP::SameLine();
+            ImGuiMCP::TextUnformatted("Press a key... (ESC = unbind which disables modifier key)");
+        } else if (capturing == CaptureTarget::None) {
+            if (ImGuiMCP::Button("Rebind Modifier")) {
+                startCapture(CaptureTarget::Modifier);
+            }
+            ImGuiMCP::SameLine();
+            if (ImGuiMCP::Button("Unbind Modifier (disables modifier key being needed)")) {
+                c.modifierKey = -1;
+            }
+        }
+
+        if (capturing != CaptureTarget::None) {
+            ImGuiMCP::Separator();
+            ImGuiMCP::TextUnformatted("Listening for input... (ESC unbinds)");
+        }
+
+        // block cancelling stuff
+        unsaved |= ImGuiMCP::Checkbox("Enable Block Cancelling Stamina Cost", &c.enableBlockCancel);
+        ImGuiMCP::BeginDisabled(!c.enableBlockCancel);
+        {   
+            unsaved |= ImGuiMCP::Checkbox("Enable No cost during MCO_Recovery", &c.allowMCORecovery);
+            unsaved |= ImGuiMCP::DragFloat("Block Cancel Cost", &c.blockCancelCost, 1.0f, 0.0f, 50.0f, "%.2f");
+            unsaved |= ImGuiMCP::DragFloat("Power Attack Block Cancel Cost", &c.powerAttackBlockCancelCost, 1.0f, 0.0f, 50.0f, "%.2f");
+        }
+        ImGuiMCP::EndDisabled();
+
+        if (!c.enableBlockCancel) {
+            ImGuiMCP::TextUnformatted("Enable Block Cancelling to edit these options.");
+        }
+        
+        unsaved |= ImGuiMCP::Checkbox("Enable Alt Block for Mages? (Requires behavior patch)", &c.mageBlock);
+        ImGuiMCP::BeginDisabled(!c.mageBlock);
+        {
+            // unsaved |= ImGuiMCP::Checkbox("Enable Mage Bashing?", &c.mageBash);
+            if (c.mageBlock) {
+                ImGuiMCP::TextUnformatted("Favorite only 1 ward! Only the first ward found will be cast.");
+            }
+            unsaved |= ImGuiMCP::Checkbox("Enable Mage block casts favorited ward", &c.mageWard);
+        }
+        ImGuiMCP::EndDisabled();
+        
+        unsaved |= ImGuiMCP::Checkbox("Enable Log", &c.log);
+
+        if (ImGuiMCP::Button("Save")) {
+            save();
+            unsaved = false;
+        }
+        ImGuiMCP::SameLine();
+        if (ImGuiMCP::Button("Revert")) {
+            load();
+            unsaved = false;
+        }
+
+        if (unsaved) {
+            ImGuiMCP::TextUnformatted("Unsaved changes");
+        }
     }
 
     void RegisterMenu() {

@@ -3,6 +3,8 @@
 #include "settings.h"
 #include "blockHandler.h"
 #include "utils.h"
+#include "blockCommit.h"
+#include "bashHandler.h"
 
 using namespace SKSE;
 using namespace SKSE::log;
@@ -15,6 +17,8 @@ static inline std::uint32_t g_blockIDCode = 0;
 using ProcessButton_t = void (*)(RE::AttackBlockHandler*, RE::ButtonEvent*, RE::PlayerControlsData*);
 static inline ProcessButton_t _ProcessButton = nullptr;
 
+static bool bashing = false;
+
 static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE::PlayerControlsData* data) {
     if (!self || !ev || !data || !_ProcessButton) {
         log::warn("[ABHook]: missing self/ev/data/_ProcessButton");
@@ -22,21 +26,43 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
     }
     //if it's not a valid equip combo -> return
     auto* pc = RE::PlayerCharacter::GetSingleton();
-    if (!pc || !utils::isLeftKeyBlock(pc)) {
+    if (!pc) {
         return _ProcessButton(self, ev, data);
     }
+    /*removed checking setings to see if mage blocking is enabled to avoid bricking controls if user installs nemesis
+        patch without turning on mageBlocking*/ 
+    if (utils::isRightHandCaster(pc)) {
+        if (pc->IsBlocking()) {
+            if (settings::log()) log::info("right hand caster, is blocking - swallowing input");
+            return;
+        }
+        return _ProcessButton(self, ev, data);
+    }
+    
     if (ev->QUserEvent() == "Left Attack/Block") {
+        if (!utils::isLeftKeyBlock(pc)) {
+            return _ProcessButton(self, ev, data);
+        }
         g_blockDevice = ev->GetDevice();
         g_blockIDCode = ev->GetIDCode();
-        auto* bh = block::blockHandler::GetSingleton();
+        auto* blockController = blockCommit::Controller::GetSingleton();
         if (ev->IsDown()) {
-            bh->OnBlockDown();
+            blockController->beginLeftBlock();
+            return _ProcessButton(self, ev, data);
+        /*} else {*/
         } else if (ev->IsUp()) {
-            const bool swallowed = bh->OnBlockUp(ev->HeldDuration());
-            if (swallowed) {
-                if (settings::log()) log::info("swallowed left release");
-                return;
+            if (ev->HeldDuration() < settings::getCommitDur()) {
+                const bool swallowed = blockController->wantReleaseLeftBlock();
+                if (swallowed) {
+                    if (settings::log()) log::info("[ABHook]: denied left release");
+                    return;
+                }
+                return _ProcessButton(self, ev, data);
+            } else {
+                if (pc->IsBlocking()) blockController->reset();
+                return _ProcessButton(self, ev, data);
             }
+            
         }
     }
     return _ProcessButton(self, ev, data);
@@ -65,9 +91,9 @@ static void InjectReleaseLeft() {
     }
     _ProcessButton(controls->attackBlockHandler, release, pdata);
     RE::free(release);
-    if (settings::log())  log::info("[ABhook]: sucessfully injected release key");
+    if (settings::log()) log::info("[ABhook]: sucessfully injected release key");
     // send block stop and the key release
-    pc->NotifyAnimationGraph("blockStop");
+    //pc->NotifyAnimationGraph("blockStop");
 }
 
 void ABHook::Check() { 
