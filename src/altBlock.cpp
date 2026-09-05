@@ -37,6 +37,8 @@ static bool areControlsEnabled() {
     return false;
 }
 
+
+
 namespace altBlock {
     static bool modifierKeyHeld = false;
     static bool isBashing = false;
@@ -77,9 +79,10 @@ namespace altBlock {
         if (!validPlayerState(player)) {
             return RE::BSEventNotifyControl::kContinue;
         }
-        /*if (!utils::canAltBlock(player)) {
+        if (!utils::canAltBlock(player)) {
             return RE::BSEventNotifyControl::kContinue;
-        }*/
+        }
+        // 
         //disable the altblock if you don't need it to block
         if (settings::isDoubleBindDisabled() && utils::isLeftKeyBlock(player) && !settings::altBlockBash()) {
             if (settings::log()) SKSE::log::info("left key is block, altBash Disabled, no double binds - alt block denied");
