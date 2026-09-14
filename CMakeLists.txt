@@ -7,7 +7,7 @@ set(BUILD_TESTS OFF CACHE BOOL "Build unit tests for CommonLibVR." FORCE)
 set(ENABLE_SKYRIM_VR OFF CACHE BOOL "" FORCE)
 
 # Set your project name. This will be the name of your SKSE .dll file.
-project(BlockOverhaul VERSION 0.0.1 LANGUAGES CXX)
+project(BlockOverhaul VERSION 2.0.1 LANGUAGES CXX)
 
 # set(OUTPUT_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/output")
 set(OUTPUT_FOLDER "D:/Skyrim SE MO2/mods/block commitment")
@@ -49,7 +49,8 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE
 ) 
 
 target_include_directories(${PROJECT_NAME} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/extern
+   ${CMAKE_CURRENT_SOURCE_DIR}/extern
+    ${CMAKE_CURRENT_SOURCE_DIR}/extern/CLibUtilsQTR/include
 )
 
 # When your SKSE .dll is compiled, this will automatically copy the .dll into your mods folder.

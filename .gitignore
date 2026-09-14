@@ -5,3 +5,5 @@ build
 cmake-build*
 extern/SKSEMenuFramework.h
 /output
+/extern/CommonLibVR-ng
+/extern/CLibUtilsQTR
