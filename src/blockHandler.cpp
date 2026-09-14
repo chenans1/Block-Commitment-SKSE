@@ -15,6 +15,7 @@ namespace block {
 
     void blockHandler::OnBlockDown() {
         _blockKeyHeld = true;
+        _releaseRequested = false;
         _pending.active = false;
         _pending.remaining = 0.0f;
         if (settings::log()) log::info("[blockHandler]: left/block key pressed");
@@ -22,6 +23,12 @@ namespace block {
         
     bool blockHandler::OnBlockUp(float heldDuration) { 
         _blockKeyHeld = false;
+        if (!settings::blockCommitOn()) {
+            _releaseRequested = false;
+            _pending.active = false;
+            _pending.remaining = 0.0f;
+            return false;
+        }
         const float commit = settings::getCommitDur();
         if (heldDuration >= commit) {
             _pending.active = false;

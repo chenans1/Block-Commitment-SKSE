@@ -3,6 +3,7 @@
 #include "updateHook.h"
 #include "ABhandler.h"
 #include "blockCommit.h"
+#include "blockHandler.h"
 #include "bashHandler.h"
 #include "settings.h"
 
@@ -23,7 +24,7 @@ namespace updateHook {
         _orig(this, a_delta);
         if (settings::blockCommitOn()) blockCommit::Controller::GetSingleton()->Update(a_delta);
         //bash::bashController::GetSingleton()->update(a_delta);
-        /*block::blockHandler::GetSingleton()->Update(a_delta);
-        ABHook::Check();*/
+        block::blockHandler::GetSingleton()->Update(a_delta);
+        ABHook::Check();
     }
 }
