@@ -110,6 +110,11 @@ namespace utils {
         const auto wardSound = sound::GetMGEFSound(spell, RE::MagicSystem::SoundID::kRelease);
         sound::play_sound(player, wardSound);
     }
-
-    //void dampVelocity(RE::PlayerCharacter* player, float horizontalScale);
+    
+    static inline bool isRightRanged(RE::PlayerCharacter* player) {
+        if (!player) return false;
+        auto* equippedForm = player->GetEquippedObject(false);
+        auto* weapon = equippedForm ? equippedForm->As<RE::TESObjectWEAP>() : nullptr;
+        return weapon && (weapon->IsBow() || weapon->IsCrossbow());
+    }
 }

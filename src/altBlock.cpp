@@ -54,7 +54,7 @@ namespace altBlock {
             return RE::BSEventNotifyControl::kContinue;
         }
         //check if the game is paused, in ui, or else:
-        const auto ui = RE::UI::GetSingleton();
+        // const auto ui = RE::UI::GetSingleton();
         if (!isUIClosed() || !areControlsEnabled()) {
             return RE::BSEventNotifyControl::kContinue;
         }
@@ -79,7 +79,12 @@ namespace altBlock {
         if (!validPlayerState(player)) {
             return RE::BSEventNotifyControl::kContinue;
         }
-        if (!utils::canAltBlock(player)) {
+        
+        // if (!utils::canAltBlock(player)) {
+        //     return RE::BSEventNotifyControl::kContinue;
+        // }
+
+        if (utils::isRightRanged(player)) {
             return RE::BSEventNotifyControl::kContinue;
         }
         // 
