@@ -237,7 +237,35 @@ namespace utils {
             }
         }
     }
+    //needed to fix the player attack data to make bash key replacement work as seamlessly as possible.
+    //will probably be shifted to a separate mod in the future. 
+    bool forceUpdateBashAttackData() {
+        auto* player = RE::PlayerCharacter::GetSingleton();
+        const auto currentProcess = player->GetActorRuntimeData().currentProcess;
+        if (!player || !currentProcess || !currentProcess->high) {
+            return false;
+        }
 
+        auto* race = player->GetRace();
+        auto* attackDataMap = race ? race->attackDataMap.get() : nullptr;
+        if (!attackDataMap) {
+            return false;
+        }
+
+        const auto it = attackDataMap->attackDataMap.find(RE::BSFixedString("bashStart"));
+        if (it == attackDataMap->attackDataMap.end() || !it->second) {
+            return false;
+        }
+
+        const auto& attackData = it->second;
+        if (!attackData->data.flags.any(RE::AttackData::AttackFlag::kBashAttack) ||
+            attackData->data.flags.any(RE::AttackData::AttackFlag::kPowerAttack)) {
+            return false;
+        }
+
+        currentProcess->high->attackData = attackData;
+        return true;
+    }
     //dont ask me wtf this is lmao
     //adapted from: https://github.com/jarari/DynamicKeyActionFramework
     bool tryIdle(RE::TESIdleForm* idle, RE::Actor* actor, RE::DEFAULT_OBJECT action = RE::DEFAULT_OBJECT::kActionIdle,
@@ -269,11 +297,23 @@ namespace utils {
         if (!pc || !bashStartIdle) {
             return false;
         }
-        /*if (auto* st = pc->AsActorState()) {
-            pc->NotifyAnimationGraph("blockStart");
-            st->actorState2.wantBlocking = 1;
-        }*/
-        const bool success = tryIdle(bashStartIdle, pc);
+        // if (auto* st = pc->AsActorState()) {
+        //     // pc->NotifyAnimationGraph("blockStart");
+        //     st->actorState2.wantBlocking = 1;
+        //     st->actorState1.meleeAttackState = RE::ATTACK_STATE_ENUM::kBash;
+        // }
+        if (pc->IsAttacking()){
+            return false;
+        }
+        auto* st = pc->AsActorState();
+        st->actorState2.wantBlocking = 1;
+        forceUpdateBashAttackData();
+        const bool success = pc->NotifyAnimationGraph("bashStart");
+        if (success) {
+            st->actorState1.meleeAttackState = RE::ATTACK_STATE_ENUM::kBash;
+        }
+        // const bool success = tryIdle(bashStartIdle, pc);
+        
         if (settings::log()) {
             if (success) {
                 SKSE::log::info("[utils] bashStart Successful");

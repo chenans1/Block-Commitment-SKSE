@@ -17,7 +17,7 @@ static inline std::uint32_t g_blockIDCode = 0;
 using ProcessButton_t = void (*)(RE::AttackBlockHandler*, RE::ButtonEvent*, RE::PlayerControlsData*);
 static inline ProcessButton_t _ProcessButton = nullptr;
 
-static bool bashing = false;
+static bool isBashing = false;
 
 static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE::PlayerControlsData* data) {
     if (!self || !ev || !data || !_ProcessButton) {
@@ -61,12 +61,17 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
         if (ev->IsDown()) {
             if (settings::leftHandBash()){
                 if (st) {
-                    pc->NotifyAnimationGraph("blockStart");
+                    // pc->NotifyAnimationGraph("blockStart");
                     st->actorState2.wantBlocking = 1;
                     if (utils::tryBashStart(pc)) {
-                        st->actorState1.meleeAttackState = RE::ATTACK_STATE_ENUM::kBash;
+                        // st->actorState1.meleeAttackState = RE::ATTACK_STATE_ENUM::kBash;
+                        st->actorState2.wantBlocking = 0;
                     }
-                    st->actorState2.wantBlocking = 0;
+                    // utils::forceUpdateBashAttackData();
+                    // if (pc->NotifyAnimationGraph("bashStart")) {
+                    //     st->actorState1.meleeAttackState = RE::ATTACK_STATE_ENUM::kBash;
+                    // }
+                    // st->actorState2.wantBlocking = 0;
                 }
                 return;
             }
@@ -88,12 +93,12 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
             if (settings::leftHandBash()) {
                 if (st) {
                     if (st->actorState1.meleeAttackState == RE::ATTACK_STATE_ENUM::kBash) {
-                        if (ev->HeldDuration() >= settings::powerBashDelay()) {
-                            utils::tryBashPowerStart(pc);
-                        } else {
+                        if (ev->HeldDuration() < settings::powerBashDelay()) {
                             utils::tryBashRelease(pc);
                         }
-                        pc->NotifyAnimationGraph("blockStop");
+                        if (pc->IsBlocking()) {
+                            pc->NotifyAnimationGraph("blockStop");
+                        }
                         st->actorState2.wantBlocking = 0;
                     }
                 }

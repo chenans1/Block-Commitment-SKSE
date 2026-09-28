@@ -38,8 +38,10 @@ namespace utils {
     bool isPlayerBlocking();
     
     bool isRightHandCaster(RE::PlayerCharacter* player);
-
+    
     inline void consumeStamina(RE::PlayerCharacter* player, float amount);
+
+    static bool forceUpdateBashAttackData();
 
     inline bool isWard(const RE::SpellItem* spell) {
         if (!spell) {
@@ -117,4 +119,4 @@ namespace utils {
         auto* weapon = equippedForm ? equippedForm->As<RE::TESObjectWEAP>() : nullptr;
         return weapon && (weapon->IsBow() || weapon->IsCrossbow());
     }
-}
+}   
