@@ -11,6 +11,7 @@ bool IsMCOBlockCancelEnabled() {
 }
 
 namespace notify {
+    static bool alreadyConsumed = false;
     bool PC_NotifyAnimationGraph(RE::IAnimationGraphManagerHolder* a_this, const RE::BSFixedString& a_eventName) {
         static const RE::BSFixedString blockStart{ "blockStart" }; 
         static const RE::BSFixedString blockStop{ "blockStop" }; 
@@ -38,11 +39,15 @@ namespace notify {
         if (a_eventName == blockStart) {
             blockCommit::Controller::GetSingleton()->beginAltBlock();
             
-            if (settings::isBlockCancelEnabled()) {     
-                utils::resolveBlockCancel(player);
+            if (settings::isBlockCancelEnabled()) {
+                if (!alreadyConsumed) {
+                    utils::resolveBlockCancel(player);
+                    alreadyConsumed = true;
+                }
             }
             
-        } else if (a_eventName == blockStop) {            
+        } else if (a_eventName == blockStop) {      
+            alreadyConsumed = false;      
             blockCommit::Controller::GetSingleton()->reset();
             if (settings::mageBlock() && settings::mageWard() && utils::isRightHandCaster(player)) {
                 player->InterruptCast(true);
