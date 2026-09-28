@@ -154,7 +154,7 @@ namespace settings {
         c.altBlockBash = ini_bool(ini, "general", "altBlockBash", c.altBlockBash);
         c.powerBashDelay = ini_float(ini, "general", "powerBashDelay", c.powerBashDelay);
         c.forceMCORecovery = ini_bool(ini, "general", "forceMCORecovery", c.forceMCORecovery);
-        c.forceMCORecovery = ini_bool(ini, "general", "leftHandBash", c.leftHandBash);
+        c.leftHandBash = ini_bool(ini, "general", "leftHandBash", c.leftHandBash);
 
         log::info("Settings Loaded: commitDuration={}, isLeftAttack={}, allowBlockDoubleBind={}", 
             c.commitDuration, c.leftAttack, c.isDoubleBindDisabled);
