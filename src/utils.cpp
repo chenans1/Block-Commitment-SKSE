@@ -13,7 +13,7 @@ namespace utils {
     inline RE::TESIdleForm* bashStartIdle;
     inline RE::TESIdleForm* bashReleaseIdle;
     inline RE::TESIdleForm* bashPowerStart;
-
+    
     bool checkFirstPerson() {
         auto* camera = RE::PlayerCamera::GetSingleton();
         return camera && camera->currentState->id == RE::CameraState::kFirstPerson;

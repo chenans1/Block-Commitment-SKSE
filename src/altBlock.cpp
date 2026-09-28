@@ -137,12 +137,12 @@ namespace altBlock {
                     if (settings::MCORecoveryCancel()) {
                         bool MCO_IsInRecovery = false;
                         if (player->GetGraphVariableBool("MCO_IsInRecovery", MCO_IsInRecovery) && MCO_IsInRecovery) {
+                            if (settings::log()) SKSE::log::info("[altBlock]: MCO recovery force blockStart");
+                            player->NotifyAnimationGraph("MCO_EndAnimation");
                             if (!player->IsBlocking()) {
-                                if (settings::log()) SKSE::log::info("[altBlock]: MCO recovery force blockStart");
-                                // player->NotifyAnimationGraph("MCO_EndAnimation");
                                 player->NotifyAnimationGraph("blockStart");
-                                st->actorState2.wantBlocking = 1;
                             }
+                            st->actorState2.wantBlocking = 1;
                             return RE::BSEventNotifyControl::kContinue;
                         }
                     }
@@ -166,6 +166,8 @@ namespace altBlock {
                 } else if (!bashInstead && settings::MCORecoveryCancel()) {
                     bool MCO_IsInRecovery = false;
                     if (player->GetGraphVariableBool("MCO_IsInRecovery", MCO_IsInRecovery) && MCO_IsInRecovery) {
+                        if (settings::log()) SKSE::log::info("[altBlock]: MCO recovery force blockStart");
+                        player->NotifyAnimationGraph("MCO_EndAnimation");
                         if (!player->IsBlocking()) {
                             player->NotifyAnimationGraph("blockStart");
                         }

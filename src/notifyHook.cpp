@@ -4,17 +4,41 @@
 #include "settings.h"
 #include "utils.h"
 
+//ADXP_MCO_DXP.esp ~ 0x80D
+bool IsMCOBlockCancelEnabled() {
+    auto* setting = RE::TESForm::LookupByEditorID<RE::TESGlobal>("MCO_bEnableBlockCancel");
+    return setting && setting->value != 0.0f;
+}
+
 namespace notify {
     bool PC_NotifyAnimationGraph(RE::IAnimationGraphManagerHolder* a_this, const RE::BSFixedString& a_eventName) {
-        const bool result = _PC_NotifyAnimationGraph(a_this, a_eventName);
         static const RE::BSFixedString blockStart{ "blockStart" }; 
         static const RE::BSFixedString blockStop{ "blockStop" }; 
         static const RE::BSFixedString bashStart{ "bashStart" }; 
         static auto* const player = RE::PlayerCharacter::GetSingleton();
+
+        //force the mco block cancel variable to true and then just check if we are allowed to process the event
+        if (a_eventName == blockStart) {
+            if (player->SetGraphVariableBool("MCO_bEnableBlockCancel", true)) {
+                // bool MCO_IsInRecovery = false;
+                bool inRecovery = false;
+                const bool hasRecoveryVariable = player->GetGraphVariableBool("MCO_IsInRecovery", inRecovery);
+                if (player->IsAttacking() && hasRecoveryVariable && !inRecovery) {
+                    if (!IsMCOBlockCancelEnabled()) {
+                        SKSE::log::info("[BlockCancelFix]: denying blockStart");
+                        return false;
+                    }
+                }
+            }
+        }
+
+        const bool result = _PC_NotifyAnimationGraph(a_this, a_eventName);
+        
         if (!result) return result;
         if (a_eventName == blockStart) {
             blockCommit::Controller::GetSingleton()->beginAltBlock();
-            if (settings::isBlockCancelEnabled() && player->IsBlocking()) {
+            
+            if (settings::isBlockCancelEnabled()) {     
                 utils::resolveBlockCancel(player);
             }
             
