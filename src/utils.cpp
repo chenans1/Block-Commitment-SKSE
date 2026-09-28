@@ -307,10 +307,10 @@ namespace utils {
         }
         auto* st = pc->AsActorState();
         st->actorState2.wantBlocking = 1;
-        forceUpdateBashAttackData();
         const bool success = pc->NotifyAnimationGraph("bashStart");
         if (success) {
             st->actorState1.meleeAttackState = RE::ATTACK_STATE_ENUM::kBash;
+            forceUpdateBashAttackData();
         }
         // const bool success = tryIdle(bashStartIdle, pc);
         

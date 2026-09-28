@@ -17,7 +17,7 @@ static inline std::uint32_t g_blockIDCode = 0;
 using ProcessButton_t = void (*)(RE::AttackBlockHandler*, RE::ButtonEvent*, RE::PlayerControlsData*);
 static inline ProcessButton_t _ProcessButton = nullptr;
 
-static bool isBashing = false;
+static bool releasedBash = false;
 
 static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE::PlayerControlsData* data) {
     if (!self || !ev || !data || !_ProcessButton) {
@@ -60,6 +60,7 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
         // auto* bashHandler = bash::bashController::GetSingleton();
         if (ev->IsDown()) {
             if (settings::leftHandBash()){
+                releasedBash = false;
                 if (st) {
                     // pc->NotifyAnimationGraph("blockStart");
                     st->actorState2.wantBlocking = 1;
@@ -78,28 +79,33 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
             bh->OnBlockDown();
             return _ProcessButton(self, ev, data);
         // held down longer than power bash, power bash auto release?
-        } else if (ev->IsPressed() && settings::leftHandBash()) {
+        } else if (ev->IsPressed() && settings::leftHandBash() && !releasedBash) {
             if (st && ev->HeldDuration() >= settings::powerBashDelay()) {
                 if (st->actorState1.meleeAttackState == RE::ATTACK_STATE_ENUM::kBash) {
                     if (ev->HeldDuration() >= settings::powerBashDelay()) {
                         utils::tryBashPowerStart(pc);
-                        pc->NotifyAnimationGraph("blockStop");
+                        releasedBash = true;
                         st->actorState2.wantBlocking = 0;
+                        if (pc->IsBlocking()) {
+                            pc->NotifyAnimationGraph("blockStop");
+                        }
                     }
                 }
             }
             return;
         } else if (ev->IsUp()) {
-            if (settings::leftHandBash()) {
+            if (settings::leftHandBash() && !releasedBash) {
                 if (st) {
                     if (st->actorState1.meleeAttackState == RE::ATTACK_STATE_ENUM::kBash) {
                         if (ev->HeldDuration() < settings::powerBashDelay()) {
                             utils::tryBashRelease(pc);
                         }
+                        releasedBash = true;
+                        st->actorState2.wantBlocking = 0;
                         if (pc->IsBlocking()) {
                             pc->NotifyAnimationGraph("blockStop");
                         }
-                        st->actorState2.wantBlocking = 0;
+                        
                     }
                 }
                 return;

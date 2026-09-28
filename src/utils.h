@@ -119,4 +119,4 @@ namespace utils {
         auto* weapon = equippedForm ? equippedForm->As<RE::TESObjectWEAP>() : nullptr;
         return weapon && (weapon->IsBow() || weapon->IsCrossbow());
     }
-}   
+};
