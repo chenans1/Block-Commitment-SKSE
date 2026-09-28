@@ -28,7 +28,6 @@ namespace notify {
                 st->actorState2.wantBlocking = 0; 
             }
             player->NotifyAnimationGraph("blockStop");
-
         }
         
         return result;

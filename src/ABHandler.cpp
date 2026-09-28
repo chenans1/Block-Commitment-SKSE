@@ -66,24 +66,24 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
                     if (utils::tryBashStart(pc)) {
                         st->actorState1.meleeAttackState = RE::ATTACK_STATE_ENUM::kBash;
                     }
-                    // st->actorState2.wantBlocking = 0;
+                    st->actorState2.wantBlocking = 0;
                 }
                 return;
             }
             bh->OnBlockDown();
             return _ProcessButton(self, ev, data);
-        //held down longer than power bash, power bash auto release?
-        // } else if (ev->IsPressed() && settings::leftHandBash()) {
-        //     if (st && ev->HeldDuration() >= settings::powerBashDelay()) {
-        //         if (st->actorState1.meleeAttackState == RE::ATTACK_STATE_ENUM::kBash) {
-        //             if (ev->HeldDuration() >= settings::powerBashDelay()) {
-        //                 utils::tryBashPowerStart(pc);
-        //             } else {
-        //                 utils::tryBashRelease(pc);
-        //             }
-        //         }
-        //     }
-        //     return;
+        // held down longer than power bash, power bash auto release?
+        } else if (ev->IsPressed() && settings::leftHandBash()) {
+            if (st && ev->HeldDuration() >= settings::powerBashDelay()) {
+                if (st->actorState1.meleeAttackState == RE::ATTACK_STATE_ENUM::kBash) {
+                    if (ev->HeldDuration() >= settings::powerBashDelay()) {
+                        utils::tryBashPowerStart(pc);
+                        pc->NotifyAnimationGraph("blockStop");
+                        st->actorState2.wantBlocking = 0;
+                    }
+                }
+            }
+            return;
         } else if (ev->IsUp()) {
             if (settings::leftHandBash()) {
                 if (st) {

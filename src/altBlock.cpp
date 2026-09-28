@@ -150,7 +150,7 @@ namespace altBlock {
                 if (utils::tryBlockIdle(player)) {
                     if (settings::log()) SKSE::log::info("[altBlock] tryBlockIdle Sucessful");
                     st->actorState2.wantBlocking = 1;
-                    if (bashInstead) {
+                    if (bashInstead && player->AsActorState()->GetAttackState() != RE::ATTACK_STATE_ENUM::kBash) {
                         if (utils::tryBashStart(player)) {
                             isBashing = true;
                         }
