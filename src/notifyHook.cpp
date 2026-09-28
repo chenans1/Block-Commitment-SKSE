@@ -7,21 +7,28 @@
 namespace notify {
     bool PC_NotifyAnimationGraph(RE::IAnimationGraphManagerHolder* a_this, const RE::BSFixedString& a_eventName) {
         const bool result = _PC_NotifyAnimationGraph(a_this, a_eventName);
+        static const RE::BSFixedString blockStart{ "blockStart" }; 
+        static const RE::BSFixedString blockStop{ "blockStop" }; 
+        static const RE::BSFixedString bashStart{ "bashStart" }; 
+        static auto* const player = RE::PlayerCharacter::GetSingleton();
         if (!result) return result;
-        if (a_eventName == "blockStart") {
+        if (a_eventName == blockStart) {
             blockCommit::Controller::GetSingleton()->beginAltBlock();
-            if (auto* player = RE::PlayerCharacter::GetSingleton()) {
-                if (settings::isBlockCancelEnabled()) {
-                    utils::resolveBlockCancel(player);
-                }
+            if (settings::isBlockCancelEnabled()) {
+                utils::resolveBlockCancel(player);
             }
-        } else if (a_eventName == "blockStop") {            
-            if (auto* player = RE::PlayerCharacter::GetSingleton()) {
-                blockCommit::Controller::GetSingleton()->reset();
-                if (settings::mageBlock() && settings::mageWard() && utils::isRightHandCaster(player)) {
-                    player->InterruptCast(true);
-                }
+            
+        } else if (a_eventName == blockStop) {            
+            blockCommit::Controller::GetSingleton()->reset();
+            if (settings::mageBlock() && settings::mageWard() && utils::isRightHandCaster(player)) {
+                player->InterruptCast(true);
             }
+        } else if (a_eventName == bashStart) {
+            if (auto* st = player->AsActorState()) {
+                st->actorState2.wantBlocking = 0; 
+            }
+            player->NotifyAnimationGraph("blockStop");
+
         }
         
         return result;

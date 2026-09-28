@@ -40,28 +40,65 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
     }
     const auto* userEvents = RE::UserEvents::GetSingleton();
 
-    if (ev->QUserEvent() == userEvents->rightAttack) {
-        if (auto* st = pc->AsActorState(); st && pc->IsBlocking() && st->actorState2.wantBlocking == 0) {
-            st->actorState2.wantBlocking = 1;
-            _ProcessButton(self, ev, data);
-            st->actorState2.wantBlocking = 0;
-            return;
-        }
-        return _ProcessButton(self, ev, data);
-    }
-    
-    if (ev->QUserEvent() == "Left Attack/Block") {
+    // if (ev->QUserEvent() == userEvents->rightAttack) {
+    //     if (auto* st = pc->AsActorState(); st && pc->IsBlocking() && st->actorState2.wantBlocking == 0) {
+    //         st->actorState2.wantBlocking = 1;
+    //         _ProcessButton(self, ev, data);
+    //         st->actorState2.wantBlocking = 0;
+    //         return;
+    //     }
+    //     return _ProcessButton(self, ev, data);
+    // }
+    auto* st = pc->AsActorState();
+    if (ev->QUserEvent() ==  userEvents->leftAttack) {
         if (!utils::isLeftKeyBlock(pc)) {
             return _ProcessButton(self, ev, data);
         }
         g_blockDevice = ev->GetDevice();
         g_blockIDCode = ev->GetIDCode();
         auto* bh = block::blockHandler::GetSingleton();
+        // auto* bashHandler = bash::bashController::GetSingleton();
         if (ev->IsDown()) {
+            if (settings::leftHandBash()){
+                if (st) {
+                    pc->NotifyAnimationGraph("blockStart");
+                    st->actorState2.wantBlocking = 1;
+                    if (utils::tryBashStart(pc)) {
+                        st->actorState1.meleeAttackState = RE::ATTACK_STATE_ENUM::kBash;
+                    }
+                    // st->actorState2.wantBlocking = 0;
+                }
+                return;
+            }
             bh->OnBlockDown();
             return _ProcessButton(self, ev, data);
-        /*} else {*/
+        //held down longer than power bash, power bash auto release?
+        // } else if (ev->IsPressed() && settings::leftHandBash()) {
+        //     if (st && ev->HeldDuration() >= settings::powerBashDelay()) {
+        //         if (st->actorState1.meleeAttackState == RE::ATTACK_STATE_ENUM::kBash) {
+        //             if (ev->HeldDuration() >= settings::powerBashDelay()) {
+        //                 utils::tryBashPowerStart(pc);
+        //             } else {
+        //                 utils::tryBashRelease(pc);
+        //             }
+        //         }
+        //     }
+        //     return;
         } else if (ev->IsUp()) {
+            if (settings::leftHandBash()) {
+                if (st) {
+                    if (st->actorState1.meleeAttackState == RE::ATTACK_STATE_ENUM::kBash) {
+                        if (ev->HeldDuration() >= settings::powerBashDelay()) {
+                            utils::tryBashPowerStart(pc);
+                        } else {
+                            utils::tryBashRelease(pc);
+                        }
+                        pc->NotifyAnimationGraph("blockStop");
+                        st->actorState2.wantBlocking = 0;
+                    }
+                }
+                return;
+            }
             const bool swallowed = bh->OnBlockUp(ev->HeldDuration());
             if (swallowed) {
                 if (settings::log()) log::info("[ABHook]: denied left release");

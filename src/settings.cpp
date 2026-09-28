@@ -154,7 +154,7 @@ namespace settings {
         c.altBlockBash = ini_bool(ini, "general", "altBlockBash", c.altBlockBash);
         c.powerBashDelay = ini_float(ini, "general", "powerBashDelay", c.powerBashDelay);
         c.forceMCORecovery = ini_bool(ini, "general", "forceMCORecovery", c.forceMCORecovery);
-        
+        c.forceMCORecovery = ini_bool(ini, "general", "leftHandBash", c.leftHandBash);
 
         log::info("Settings Loaded: commitDuration={}, isLeftAttack={}, allowBlockDoubleBind={}", 
             c.commitDuration, c.leftAttack, c.isDoubleBindDisabled);
@@ -186,7 +186,7 @@ namespace settings {
         ini.SetLongValue("general", "altBlockBash", c.altBlockBash ? 1 : 0);
         ini.SetDoubleValue("general", "powerBashDelay", static_cast<double>(c.powerBashDelay), "%.3f");
         ini.SetLongValue("general", "forceMCORecovery", c.forceMCORecovery ? 1 : 0);
-        
+        ini.SetLongValue("general", "leftHandBash", c.leftHandBash ? 1 : 0);
 
         const SI_Error rc = ini.SaveFile(path);
         if (rc < 0) {
@@ -208,6 +208,8 @@ namespace settings {
         ImGuiMCP::EndDisabled();
         unsaved |= ImGuiMCP::Checkbox("For dual wield/unarmed is left key attack? (MCO/BFCO, No)", &c.leftAttack);
         unsaved |= ImGuiMCP::Checkbox("Enable Force blockStart (attack cancel) during MCO Recovery", &c.forceMCORecovery);
+
+        unsaved |= ImGuiMCP::Checkbox("Replace left hand block with bash", &c.leftHandBash);
 
         unsaved |= ImGuiMCP::Checkbox("Enable Alt Block is (power)Bashing if left key is block", &c.altBlockBash);
         ImGuiMCP::BeginDisabled(!c.altBlockBash);

@@ -20,6 +20,8 @@ namespace settings {
         bool forceMCORecovery = true;
         float powerAttackBlockCancelCost = 10.0f;
 
+        bool leftHandBash = true;
+
 	};
 
 	config& Get();
@@ -41,6 +43,7 @@ namespace settings {
     inline bool MCORecoveryCancel() { return Get().forceMCORecovery; }
     inline float PACancelCost() { return Get().powerAttackBlockCancelCost; }
     inline bool blockCommitOn() { return Get().enableBlockCommitment; }
+    inline bool leftHandBash() {return Get().leftHandBash;}
 
     void RegisterMenu();
     void __stdcall RenderMenuPage();
