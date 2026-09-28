@@ -241,8 +241,9 @@ namespace utils {
     //will probably be shifted to a separate mod in the future. 
     bool forceUpdateBashAttackData() {
         auto* player = RE::PlayerCharacter::GetSingleton();
+        if (!player) return false;
         const auto currentProcess = player->GetActorRuntimeData().currentProcess;
-        if (!player || !currentProcess || !currentProcess->high) {
+        if (!currentProcess || !currentProcess->high) {
             return false;
         }
 
@@ -258,10 +259,10 @@ namespace utils {
         }
 
         const auto& attackData = it->second;
-        if (!attackData->data.flags.any(RE::AttackData::AttackFlag::kBashAttack) ||
-            attackData->data.flags.any(RE::AttackData::AttackFlag::kPowerAttack)) {
+        if (!attackData->data.flags.any(RE::AttackData::AttackFlag::kBashAttack)) {
             return false;
         }
+        
 
         currentProcess->high->attackData = attackData;
         return true;

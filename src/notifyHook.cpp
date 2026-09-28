@@ -14,7 +14,7 @@ namespace notify {
         if (!result) return result;
         if (a_eventName == blockStart) {
             blockCommit::Controller::GetSingleton()->beginAltBlock();
-            if (settings::isBlockCancelEnabled()) {
+            if (settings::isBlockCancelEnabled() && player->IsBlocking()) {
                 utils::resolveBlockCancel(player);
             }
             
@@ -23,12 +23,13 @@ namespace notify {
             if (settings::mageBlock() && settings::mageWard() && utils::isRightHandCaster(player)) {
                 player->InterruptCast(true);
             }
-        } else if (a_eventName == bashStart) {
-            if (auto* st = player->AsActorState()) {
-                st->actorState2.wantBlocking = 0; 
-            }
-            player->NotifyAnimationGraph("blockStop");
-        }
+        } 
+        // else if (a_eventName == bashStart) {
+        //     if (auto* st = player->AsActorState()) {
+        //         st->actorState2.wantBlocking = 0; 
+        //     }
+        //     player->NotifyAnimationGraph("blockStop");
+        // }
         
         return result;
     }
