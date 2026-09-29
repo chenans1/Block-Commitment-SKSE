@@ -155,6 +155,7 @@ namespace settings {
         c.powerBashDelay = ini_float(ini, "general", "powerBashDelay", c.powerBashDelay);
         c.forceMCORecovery = ini_bool(ini, "general", "forceMCORecovery", c.forceMCORecovery);
         c.leftHandBash = ini_bool(ini, "general", "leftHandBash", c.leftHandBash);
+        c.fixMCOAttackCancel = ini_bool(ini, "general", "fixMCOAttackCancel", c.fixMCOAttackCancel);
 
         log::info("Settings Loaded: commitDuration={}, isLeftAttack={}, allowBlockDoubleBind={}", 
             c.commitDuration, c.leftAttack, c.isDoubleBindDisabled);
@@ -187,6 +188,7 @@ namespace settings {
         ini.SetDoubleValue("general", "powerBashDelay", static_cast<double>(c.powerBashDelay), "%.3f");
         ini.SetLongValue("general", "forceMCORecovery", c.forceMCORecovery ? 1 : 0);
         ini.SetLongValue("general", "leftHandBash", c.leftHandBash ? 1 : 0);
+        ini.SetLongValue("general", "fixMCOAttackCancel", c.fixMCOAttackCancel ? 1 : 0);
 
         const SI_Error rc = ini.SaveFile(path);
         if (rc < 0) {
@@ -282,6 +284,8 @@ namespace settings {
             ImGuiMCP::TextUnformatted("Enable Block Cancelling to edit these options.");
         }
         
+        unsaved |= ImGuiMCP::Checkbox("Fix MCO Attack Cancel Behavior", &c.fixMCOAttackCancel);
+
         unsaved |= ImGuiMCP::Checkbox("Enable Alt Block for Mages? (Requires behavior patch)", &c.mageBlock);
         ImGuiMCP::BeginDisabled(!c.mageBlock);
         {

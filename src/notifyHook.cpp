@@ -18,8 +18,8 @@ namespace notify {
         static const RE::BSFixedString bashStart{ "bashStart" }; 
         static auto* const player = RE::PlayerCharacter::GetSingleton();
 
-        //force the mco block cancel variable to true and then just check if we are allowed to process the event
-        if (a_eventName == blockStart) {
+        // force the mco block cancel variable to true and then just check if we are allowed to process the event
+        if (settings::fixMCOAttackCancel() && a_eventName == blockStart) {
             if (player->SetGraphVariableBool("MCO_bEnableBlockCancel", true)) {
                 // bool MCO_IsInRecovery = false;
                 bool inRecovery = false;

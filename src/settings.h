@@ -21,6 +21,7 @@ namespace settings {
         float powerAttackBlockCancelCost = 10.0f;
 
         bool leftHandBash = true;
+        bool fixMCOAttackCancel = true;
 
 	};
 
@@ -44,6 +45,7 @@ namespace settings {
     inline float PACancelCost() { return Get().powerAttackBlockCancelCost; }
     inline bool blockCommitOn() { return Get().enableBlockCommitment; }
     inline bool leftHandBash() {return Get().leftHandBash;}
+    inline bool fixMCOAttackCancel() {return Get().fixMCOAttackCancel;}
 
     void RegisterMenu();
     void __stdcall RenderMenuPage();
