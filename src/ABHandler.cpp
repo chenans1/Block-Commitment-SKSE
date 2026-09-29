@@ -10,10 +10,6 @@ using namespace SKSE;
 using namespace SKSE::log;
 using namespace SKSE::stl;
 
-//cache the left key -> this should make rebinding not require u to restart game
-static inline RE::INPUT_DEVICE g_blockDevice = RE::INPUT_DEVICE::kKeyboard;
-static inline std::uint32_t g_blockIDCode = 0;
-
 using ProcessButton_t = void (*)(RE::AttackBlockHandler*, RE::ButtonEvent*, RE::PlayerControlsData*);
 static inline ProcessButton_t _ProcessButton = nullptr;
 
@@ -29,6 +25,18 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
     if (!pc) {
         return _ProcessButton(self, ev, data);
     }
+    const auto* userEvents = RE::UserEvents::GetSingleton();
+    auto* bh = block::blockHandler::GetSingleton();
+    // A block press must finish through the same handler even if the player's
+    // equipment or bash settings changed before the key was released.
+    if (userEvents && ev->QUserEvent() == userEvents->leftAttack && ev->IsUp() && bh->IsBlockHeld()) {
+        if (bh->OnBlockUp(ev->HeldDuration())) {
+            if (settings::log()) log::info("[ABHook]: denied left release");
+            return;
+        }
+        return _ProcessButton(self, ev, data);
+    }
+    if (!userEvents) return _ProcessButton(self, ev, data);
     /*removed checking setings to see if mage blocking is enabled to avoid bricking controls if user installs nemesis
         patch without turning on mageBlocking*/ 
     if (utils::isRightHandCaster(pc)) {
@@ -38,7 +46,6 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
         }
         return _ProcessButton(self, ev, data);
     }
-    const auto* userEvents = RE::UserEvents::GetSingleton();
     auto* st = pc->AsActorState();
 
     //for bashing if you've released block key but the block animation is still on
@@ -52,17 +59,15 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
     //     return _ProcessButton(self, ev, data);
     // }
 
-    const bool isDrawn = st->IsWeaponDrawn();
     if (ev->QUserEvent() ==  userEvents->leftAttack) {
         if (!utils::isLeftKeyBlock(pc)) {
             return _ProcessButton(self, ev, data);
         }
+        if (!st) return _ProcessButton(self, ev, data);
+        const bool isDrawn = st->IsWeaponDrawn();
         if (settings::leftHandBash() && !isDrawn) {
             return _ProcessButton(self, ev, data);
         }
-        g_blockDevice = ev->GetDevice();
-        g_blockIDCode = ev->GetIDCode();
-        auto* bh = block::blockHandler::GetSingleton();
         // auto* bashHandler = bash::bashController::GetSingleton();
         if (ev->IsDown()) {
             if (settings::leftHandBash()){
@@ -84,7 +89,7 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
                 }
                 return;
             } else {
-                bh->OnBlockDown();
+                bh->OnBlockDown(ev);
             }
             return _ProcessButton(self, ev, data);
         // held down longer than power bash, power bash auto release?
@@ -103,8 +108,8 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
             }
             return;
         } else if (ev->IsUp()) {
-            if (settings::leftHandBash() && !releasedBash) {
-                if (st) {
+            if (settings::leftHandBash()) {
+                if (!releasedBash && st) {
                     if (st->actorState1.meleeAttackState == RE::ATTACK_STATE_ENUM::kBash) {
                         if (ev->HeldDuration() < settings::powerBashDelay()) {
                             utils::tryBashRelease(pc);
@@ -119,55 +124,19 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
                 }
                 return;
             }
-            const bool swallowed = bh->OnBlockUp(ev->HeldDuration());
-            if (swallowed) {
-                if (settings::log()) log::info("[ABHook]: denied left release");
-                return;
-            }
             return _ProcessButton(self, ev, data);
         }
     }
     return _ProcessButton(self, ev, data);
 }
 
-static void InjectReleaseLeft() {
-    if (!_ProcessButton) {
-        return;
-    }
-    auto* controls = RE::PlayerControls::GetSingleton();
-    if (!controls || !controls->attackBlockHandler) {
-        return;
-    }
-
-    auto* pdata = std::addressof(controls->data);
-
-    // dont bother injecting if not blocking maybe?
-    auto* pc = RE::PlayerCharacter::GetSingleton();
-    if (!pc) {
-        return;
-    }
-    // create synthetic button release event
-    RE::ButtonEvent* release = RE::ButtonEvent::Create(g_blockDevice, "Left Attack/Block", g_blockIDCode, 0.0f, 0.0f);
-    if (!release) {
-        return;
-    }
-    _ProcessButton(controls->attackBlockHandler, release, pdata);
-    RE::free(release);
-    if (settings::log()) log::info("[ABhook]: sucessfully injected release key");
-    // send block stop and the key release
-    //pc->NotifyAnimationGraph("blockStop");
-}
-
 void ABHook::Check() { 
-    auto* bh = block::blockHandler::GetSingleton(); 
+    auto* bh = block::blockHandler::GetSingleton();
     if (bh->IsBlockHeld()) {
         if (settings::log()) log::info("Check: blockKey is held");
         return;
     }
-    if (bh->consumeReleaseRequest()) {
-        if (settings::log()) log::info("Consumed Release Request");
-        InjectReleaseLeft();
-    }
+    bh->TryInjectRelease(_ProcessButton);
 }
 
 void ABHook::Install() {

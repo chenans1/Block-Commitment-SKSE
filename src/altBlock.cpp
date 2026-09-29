@@ -177,7 +177,6 @@ namespace altBlock {
             } else if (btn->IsUp()) {
                 if (!bashInstead) {
                     blockController->wantReleaseAltBlock();
-                    st->actorState2.wantBlocking = 0;
                     isBashing = false;
                     //return RE::BSEventNotifyControl::kContinue;
                 } else {

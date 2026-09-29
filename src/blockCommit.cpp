@@ -8,18 +8,16 @@
 namespace blockCommit {
     void Controller::stopBlocking() {
         _state.wantStop = false;
+        _state.blockDuration = 0.0f;
         if (auto* player = RE::PlayerCharacter::GetSingleton()) {
             if (auto* st = player->AsActorState()) {
                 if (player->IsBlocking()) {
                     player->NotifyAnimationGraph("blockStop");
-                    st->actorState2.wantBlocking = 0;
-                    _state.blockDuration = 0.0f;
                     if (settings::log()) SKSE::log::info("[blockCommit]: delayed blockStop Fired");
-                    return;
                 }
+                st->actorState2.wantBlocking = 0;
             }
         }
-        return;
     }
 
     Controller* Controller::GetSingleton() {
@@ -52,6 +50,11 @@ namespace blockCommit {
     }
 
 	void Controller::wantReleaseAltBlock() {
+        auto* player = RE::PlayerCharacter::GetSingleton();
+        if (!player || !player->IsBlocking()) {
+            stopBlocking();
+            return;
+        }
         //just release if blockCommit is OFF
         if (_state.blockDuration >= settings::getCommitDur() || !settings::blockCommitOn()) {
             if (settings::log()) {
@@ -111,7 +114,15 @@ namespace blockCommit {
     }
 
     void Controller::reset() {
-        /*if (!utils::isPlayerBlocking)*/
+        // A bash or another animation can stop blocking before the delayed
+        // release expires. In that case the alt key is already up.
+        if (_state.wantStop) {
+            if (auto* player = RE::PlayerCharacter::GetSingleton()) {
+                if (auto* st = player->AsActorState()) {
+                    st->actorState2.wantBlocking = 0;
+                }
+            }
+        }
         _state.wantStop = false;
         _state.blockDuration = 0.0f;
     }

@@ -13,7 +13,10 @@ namespace block {
         return std::addressof(inst);
     }
 
-    void blockHandler::OnBlockDown() {
+    void blockHandler::OnBlockDown(RE::ButtonEvent* event) {
+        if (!event) return;
+        _device = event->GetDevice();
+        _idCode = event->GetIDCode();
         _blockKeyHeld = true;
         _releaseRequested = false;
         _pending.active = false;
@@ -22,6 +25,7 @@ namespace block {
     }
         
     bool blockHandler::OnBlockUp(float heldDuration) { 
+        if (!_blockKeyHeld) return false;
         _blockKeyHeld = false;
         if (!settings::blockCommitOn()) {
             _releaseRequested = false;
@@ -72,9 +76,18 @@ namespace block {
         if (settings::log()) log::info("releaseRequest=true");
     }
 
-    bool blockHandler::consumeReleaseRequest() {
-        if (!_releaseRequested) return false;
+    bool blockHandler::TryInjectRelease(ProcessButton processButton) {
+        if (!_releaseRequested || _blockKeyHeld || !processButton) return false;
+        auto* controls = RE::PlayerControls::GetSingleton();
+        if (!controls || !controls->attackBlockHandler || !RE::PlayerCharacter::GetSingleton()) return false;
+
+        auto* release = RE::ButtonEvent::Create(_device, "Left Attack/Block", _idCode, 0.0f, 0.0f);
+        if (!release) return false;
+
+        processButton(controls->attackBlockHandler, release, std::addressof(controls->data));
+        RE::free(release);
         _releaseRequested = false;
+        if (settings::log()) log::info("[blockHandler]: injected delayed left/block release");
         return true;
     }
 }
