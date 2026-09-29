@@ -212,6 +212,7 @@ namespace utils {
     void resolveBlockCancel(RE::PlayerCharacter* player) { 
         if (!player) return;
         const bool recoveryAllowed = settings::allowMCORecovery();
+        const bool freeDuringFollowThrough = settings::freeDuringFollowThrough();
         // if we are in recovery, allow block cancel free of cost
         if (recoveryAllowed) {
             bool MCO_recovery = false;
@@ -222,9 +223,23 @@ namespace utils {
                 }
             }
         }
+        
         //  now we need to check if attacking
         auto* playerState = player->AsActorState();
         if (playerState) {
+            if (freeDuringFollowThrough) {
+                const bool allowed = playerState->actorState1.meleeAttackState == RE::ATTACK_STATE_ENUM::kNextAttack 
+                    || playerState->actorState1.meleeAttackState == RE::ATTACK_STATE_ENUM::kFollowThrough
+                    || playerState->actorState1.meleeAttackState == RE::ATTACK_STATE_ENUM::kNone
+                    || playerState->actorState1.meleeAttackState == RE::ATTACK_STATE_ENUM::kDraw;
+                SKSE::log::info("[resolveBlockCancel] Player is in state {}", static_cast<std::uint32_t>(playerState->actorState1.meleeAttackState));
+                if (allowed) {
+                    if (settings::log()){
+                        SKSE::log::info("Player is in follow through, no attack cancel cost.");
+                    }
+                    return;
+                }
+            }
             const bool isPowerAttacking = player->IsPowerAttacking();
             if (isPowerAttacking) {
                 consumeStamina(player, settings::PACancelCost());

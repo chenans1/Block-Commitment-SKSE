@@ -12,6 +12,7 @@ namespace settings {
         bool enableBlockCancel = true;
         float blockCancelCost = 10.0f;
         bool allowMCORecovery = true;
+        bool freeDuringFollowThrough = false;
         bool mageBlock = true;
         bool mageBash = true;
         bool altBlockBash = true;
@@ -46,6 +47,7 @@ namespace settings {
     inline bool blockCommitOn() { return Get().enableBlockCommitment; }
     inline bool leftHandBash() {return Get().leftHandBash;}
     inline bool fixMCOAttackCancel() {return Get().fixMCOAttackCancel;}
+    inline bool freeDuringFollowThrough() {return Get().freeDuringFollowThrough;}
 
     void RegisterMenu();
     void __stdcall RenderMenuPage();

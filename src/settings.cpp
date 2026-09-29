@@ -156,6 +156,7 @@ namespace settings {
         c.forceMCORecovery = ini_bool(ini, "general", "forceMCORecovery", c.forceMCORecovery);
         c.leftHandBash = ini_bool(ini, "general", "leftHandBash", c.leftHandBash);
         c.fixMCOAttackCancel = ini_bool(ini, "general", "fixMCOAttackCancel", c.fixMCOAttackCancel);
+        c.freeDuringFollowThrough = ini_bool(ini, "general", "freeDuringFollowThrough", c.freeDuringFollowThrough);
 
         log::info("Settings Loaded: commitDuration={}, isLeftAttack={}, allowBlockDoubleBind={}", 
             c.commitDuration, c.leftAttack, c.isDoubleBindDisabled);
@@ -189,6 +190,7 @@ namespace settings {
         ini.SetLongValue("general", "forceMCORecovery", c.forceMCORecovery ? 1 : 0);
         ini.SetLongValue("general", "leftHandBash", c.leftHandBash ? 1 : 0);
         ini.SetLongValue("general", "fixMCOAttackCancel", c.fixMCOAttackCancel ? 1 : 0);
+        ini.SetLongValue("general", "freeDuringFollowThrough", c.freeDuringFollowThrough ? 1 : 0);
 
         const SI_Error rc = ini.SaveFile(path);
         if (rc < 0) {
@@ -255,6 +257,7 @@ namespace settings {
         ImGuiMCP::BeginDisabled(!c.enableBlockCancel);
         {   
             unsaved |= ImGuiMCP::Checkbox("Enable No cost during MCO_Recovery", &c.allowMCORecovery);
+            unsaved |= ImGuiMCP::Checkbox("Enable No cost during on attack follow through state", &c.freeDuringFollowThrough);
             unsaved |= ImGuiMCP::DragFloat("Block Cancel Cost", &c.blockCancelCost, 1.0f, 0.0f, 50.0f, "%.2f");
             unsaved |= ImGuiMCP::DragFloat("Power Attack Block Cancel Cost", &c.powerAttackBlockCancelCost, 1.0f, 0.0f, 50.0f, "%.2f");
         }
