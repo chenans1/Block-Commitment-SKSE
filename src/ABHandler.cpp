@@ -29,7 +29,7 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
     // A block press must finish through the same handler even if the player's
     // equipment or bash settings changed before the key was released.
     if (userEvents && ev->QUserEvent() == userEvents->leftAttack && ev->IsUp() && bh->IsLeftBlockHeld()) {
-        if (bh->OnLeftBlockUp(ev->HeldDuration())) {
+        if (bh->OnLeftBlockUp()) {
             if (settings::log()) log::info("[ABHook]: denied left release");
             return;
         }

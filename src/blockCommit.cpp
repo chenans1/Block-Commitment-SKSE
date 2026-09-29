@@ -32,16 +32,15 @@ namespace blockCommit {
         if (settings::log()) SKSE::log::info("[blockCommit]: left/block key pressed");
     }
 
-    bool Controller::OnLeftBlockUp(float heldDuration) {
+    bool Controller::OnLeftBlockUp() {
         if (!_leftKeyHeld) return false;
         _leftKeyHeld = false;
-        _left = {};
+        _left.releasePending = false;
         _leftReleaseRequested = false;
         auto* player = RE::PlayerCharacter::GetSingleton();
         const bool wasBlocking = player && player->IsBlocking();
         // The native handler still needs wantBlocking when it receives the real or delayed key-up.
 
-        _left.elapsed = heldDuration;
         if (releaseReady(_left)) {
             return false;
         }
@@ -50,7 +49,7 @@ namespace blockCommit {
         }
         _left.releasePending = true;
         if (settings::log()) {
-            SKSE::log::info("[blockCommit]: left release pending, remaining={}", settings::getCommitDur() - heldDuration);
+            SKSE::log::info("[blockCommit]: left release pending, remaining={}", settings::getCommitDur() - _left.elapsed);
         }
         return true;
     }
@@ -104,6 +103,9 @@ namespace blockCommit {
     }
 
     void Controller::onBlockStart() {
+        if (_leftKeyHeld && !_left.releasePending) {
+            _left.elapsed = 0.0f;
+        }
         if (_altKeyHeld && !_alt.releasePending) {
             _alt.elapsed = 0.0f;
         }
@@ -171,7 +173,7 @@ namespace blockCommit {
         }
 
         if (a_delta > 0.0f) {
-            if (_left.releasePending) {
+            if ((_leftKeyHeld && isBlocking) || _left.releasePending) {
                 _left.elapsed += a_delta;
             }
             if ((_altKeyHeld || _alt.releasePending) && isBlocking) {

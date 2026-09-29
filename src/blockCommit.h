@@ -8,7 +8,7 @@ namespace blockCommit {
         static Controller* GetSingleton();
 
         void OnLeftBlockDown(RE::ButtonEvent* event);
-        bool OnLeftBlockUp(float heldDuration);
+        bool OnLeftBlockUp();
         bool IsLeftBlockHeld() const { return _leftKeyHeld; }
         bool IsAltBlockHeld() const { return _altKeyHeld; }
         bool TryInjectLeftRelease(ProcessButton processButton);
