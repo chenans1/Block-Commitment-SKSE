@@ -1,145 +1,164 @@
 #include "PCH.h"
 
 #include "blockCommit.h"
-#include "altBlock.h"
 #include "settings.h"
-#include "utils.h"
 
 namespace blockCommit {
-    void Controller::stopBlocking() {
-        _state.wantStop = false;
-        _state.blockDuration = 0.0f;
-        if (auto* player = RE::PlayerCharacter::GetSingleton()) {
-            if (auto* st = player->AsActorState()) {
-                if (player->IsBlocking()) {
-                    player->NotifyAnimationGraph("blockStop");
-                    if (settings::log()) SKSE::log::info("[blockCommit]: delayed blockStop Fired");
-                }
-                st->actorState2.wantBlocking = 0;
-            }
-        }
-    }
-
     Controller* Controller::GetSingleton() {
         static Controller singleton;
         return std::addressof(singleton);
     }
 
-    void Controller::beginAltBlock() {
-        if (!settings::blockCommitOn()) {
-            if (settings::log()) SKSE::log::info("[blockCommit]: beginAltBlock do nothing, block commit off");
-            return;
-        }
-        if (settings::log()) SKSE::log::info("[blockCommit]: beginAltBlock");
-        _state.altBlockMode = true;
-        _state.wantStop = false;
-        _state.blockDuration = 0.0f;
+    bool Controller::releaseReady(const Commitment& commitment) const {
+        return !settings::blockCommitOn() || commitment.elapsed >= settings::getCommitDur();
     }
 
-    // use pending altblock mode to prevent mixing up block input
-    // fetch the input key types here
-    void Controller::beginLeftBlock() {
-        if (!settings::blockCommitOn()) {
-            if (settings::log()) SKSE::log::info("[blockCommit]: beginLeftBlock do nothing, block commit off");
-            return;
+    void Controller::updateWantBlocking(RE::PlayerCharacter* player) {
+        // Once the release has been forwarded, graph blocking alone cannot keep bash input enabled.
+        if (player) {
+            if (auto* state = player->AsActorState()) {
+                state->actorState2.wantBlocking = (_leftKeyHeld || _altKeyHeld) ? 1 : 0;
+            }
         }
-        if (settings::log()) SKSE::log::info("[blockCommit]: beginLeftBlock");
-        _state.altBlockMode = false;
-        _state.wantStop = false;
-        _state.blockDuration = 0.0f;
     }
 
-	void Controller::wantReleaseAltBlock() {
-        auto* player = RE::PlayerCharacter::GetSingleton();
-        if (!player || !player->IsBlocking()) {
-            stopBlocking();
-            return;
-        }
-        //just release if blockCommit is OFF
-        if (_state.blockDuration >= settings::getCommitDur() || !settings::blockCommitOn()) {
-            if (settings::log()) {
-                if (settings::blockCommitOn()) {
-                    SKSE::log::info("[wantReleaseAltBlock] allow release: block duration={}", _state.blockDuration);
-                } else {
-                    SKSE::log::info("[wantReleaseAltBlock] allow release: block commit is off");
-                }
-            }
-            _state.wantStop = false;
-            _state.blockDuration = 0.0f;
-            stopBlocking();
-            return;
-        }
-        _state.wantStop = true;
-        if (settings::log()) {
-            SKSE::log::info("[wantReleaseAltBlock]: block duration={}, remaining={}", 
-                _state.blockDuration, (settings::getCommitDur() - _state.blockDuration));
-        }
-	}
+    void Controller::OnLeftBlockDown(RE::ButtonEvent* event) {
+        if (!event) return;
+        _leftDevice = event->GetDevice();
+        _leftIdCode = event->GetIDCode();
+        _leftKeyHeld = true;
+        _leftReleaseRequested = false;
+        _left = {};
+        if (settings::log()) SKSE::log::info("[blockCommit]: left/block key pressed");
+    }
 
-    //returns true/false to decide if we swallow input
-    bool Controller::wantReleaseLeftBlock() { 
-        //if block commit off: always return false
-        if (!settings::blockCommitOn()) {
-            if (settings::log()) {
-                SKSE::log::info("[wantReleaseLeftBlock] allow release: block commit is off");
-            }
-            _state.wantStop = false;
-            _state.blockDuration = 0.0f;
-            return false;
-        }
+    bool Controller::OnLeftBlockUp(float heldDuration) {
+        if (!_leftKeyHeld) return false;
+        _leftKeyHeld = false;
+        _left = {};
+        _leftReleaseRequested = false;
         auto* player = RE::PlayerCharacter::GetSingleton();
-        if (player && !player->IsBlocking()) {
-            if (settings::log()) {
-                SKSE::log::info("[wantReleaseLeftBlock] Player is not blocking");
-            }
-            _state.wantStop = false;
-            _state.blockDuration = 0.0f;
+        const bool wasBlocking = player && player->IsBlocking();
+        // The native handler still needs wantBlocking when it receives the real or delayed key-up.
+
+        _left.elapsed = heldDuration;
+        if (releaseReady(_left)) {
             return false;
         }
-        if (_state.blockDuration >= settings::getCommitDur()) {
-            if (settings::log()) {
-                SKSE::log::info("[wantReleaseLeftBlock] allow release: block duration={}", _state.blockDuration);
-            }
-            _state.wantStop = false;
-            _state.blockDuration = 0.0f;
+        if (!wasBlocking) {
             return false;
         }
-        //if we haven't held long enough, just set the flag to true
+        _left.releasePending = true;
         if (settings::log()) {
-            SKSE::log::info("[wantReleaseLeftBlock]: block duration={}, remaining={}", 
-                _state.blockDuration, (settings::getCommitDur() - _state.blockDuration));
+            SKSE::log::info("[blockCommit]: left release pending, remaining={}", settings::getCommitDur() - heldDuration);
         }
-        _state.wantStop = true;
         return true;
     }
 
-    void Controller::reset() {
-        // A bash or another animation can stop blocking before the delayed
-        // release expires. In that case the alt key is already up.
-        if (_state.wantStop) {
-            if (auto* player = RE::PlayerCharacter::GetSingleton()) {
-                if (auto* st = player->AsActorState()) {
-                    st->actorState2.wantBlocking = 0;
-                }
-            }
-        }
-        _state.wantStop = false;
-        _state.blockDuration = 0.0f;
+    bool Controller::TryInjectLeftRelease(ProcessButton processButton) {
+        if (!_leftReleaseRequested || _leftKeyHeld || !processButton) return false;
+        auto* controls = RE::PlayerControls::GetSingleton();
+        auto* player = RE::PlayerCharacter::GetSingleton();
+        if (!controls || !controls->attackBlockHandler || !player) return false;
+
+        auto* release = RE::ButtonEvent::Create(_leftDevice, "Left Attack/Block", _leftIdCode, 0.0f, 0.0f);
+        if (!release) return false;
+
+        processButton(controls->attackBlockHandler, release, std::addressof(controls->data));
+        OnLeftReleaseForwarded(player);
+        RE::free(release);
+        _leftReleaseRequested = false;
+        if (settings::log()) SKSE::log::info("[blockCommit]: injected delayed left/block release");
+        return true;
     }
 
-    //invoked from the player update hook
-    void Controller::Update(float a_delta) {
-        //SKSE::log::info("[altController] Update()");
-        const auto* player = RE::PlayerCharacter::GetSingleton();
-        if (player->IsBlocking()) {
-            _state.blockDuration += a_delta;
+    void Controller::OnLeftReleaseForwarded(RE::PlayerCharacter* player) {
+        if (!player || _leftKeyHeld) return;
+        updateWantBlocking(player);
+        if (settings::log()) {
+            SKSE::log::info("[blockCommit]: left release forwarded, graph blocking={}, wantBlocking={}",
+                player->IsBlocking(), _altKeyHeld);
         }
-        
-        // if we want to stop blocking: check if blockduration > commit duration
-        // if true allow unblock, if not do nothing
-        if (_state.wantStop && _state.blockDuration >= settings::getCommitDur()) {
-            stopBlocking();
+    }
+
+    void Controller::beginAltBlock() {
+        _altKeyHeld = true;
+        _alt = {};
+        if (!settings::blockCommitOn()) return;
+        if (settings::log()) SKSE::log::info("[blockCommit]: beginAltBlock");
+    }
+
+    void Controller::onBlockStart() {
+        if (_altKeyHeld && !_alt.releasePending) {
+            _alt.elapsed = 0.0f;
+        }
+    }
+
+    void Controller::wantReleaseAltBlock() {
+        _altKeyHeld = false;
+        auto* player = RE::PlayerCharacter::GetSingleton();
+        const bool wasBlocking = player && player->IsBlocking();
+        updateWantBlocking(player);
+        if (settings::log()) {
+            SKSE::log::info("[blockCommit]: alt key released, graph blocking={}", wasBlocking);
+        }
+        if (!wasBlocking || releaseReady(_alt)) {
+            stopAltBlocking();
             return;
         }
-   }
+
+        _alt.releasePending = true;
+        if (settings::log()) {
+            SKSE::log::info("[blockCommit]: alt release pending, remaining={}", settings::getCommitDur() - _alt.elapsed);
+        }
+    }
+
+    void Controller::stopAltBlocking() {
+        _alt = {};
+        _altKeyHeld = false;
+        if (auto* player = RE::PlayerCharacter::GetSingleton()) {
+            if (auto* state = player->AsActorState()) {
+                if (player->IsBlocking()) {
+                    player->NotifyAnimationGraph("blockStop");
+                    if (settings::log()) SKSE::log::info("[blockCommit]: delayed blockStop fired");
+                }
+            }
+            updateWantBlocking(player);
+        }
+    }
+
+    void Controller::reset() {
+        // A bash or another animation may stop blocking before release is due.
+        if (_alt.releasePending) {
+            updateWantBlocking(RE::PlayerCharacter::GetSingleton());
+        }
+        _alt = {};
+    }
+
+    void Controller::Update(float a_delta) {
+        auto* player = RE::PlayerCharacter::GetSingleton();
+        const bool isBlocking = player && player->IsBlocking();
+        if (_alt.releasePending && !isBlocking) {
+            stopAltBlocking();
+        }
+
+        if (a_delta > 0.0f) {
+            if (_left.releasePending) {
+                _left.elapsed += a_delta;
+            }
+            if ((_altKeyHeld || _alt.releasePending) && isBlocking) {
+                _alt.elapsed += a_delta;
+            }
+        }
+
+        if (_left.releasePending && releaseReady(_left)) {
+            _left.releasePending = false;
+            if (!_leftKeyHeld) {
+                _leftReleaseRequested = true;
+            }
+        }
+        if (_alt.releasePending && releaseReady(_alt)) {
+            stopAltBlocking();
+        }
+    }
 }

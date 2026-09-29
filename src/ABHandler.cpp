@@ -1,7 +1,6 @@
 #include "PCH.h"
 #include "ABHandler.h"
 #include "settings.h"
-#include "blockHandler.h"
 #include "utils.h"
 #include "blockCommit.h"
 #include "bashHandler.h"
@@ -26,16 +25,16 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
         return _ProcessButton(self, ev, data);
     }
     const auto* userEvents = RE::UserEvents::GetSingleton();
-    auto* bh = block::blockHandler::GetSingleton();
+    auto* bh = blockCommit::Controller::GetSingleton();
     // A block press must finish through the same handler even if the player's
     // equipment or bash settings changed before the key was released.
-    if (userEvents && ev->QUserEvent() == userEvents->leftAttack && ev->IsUp() && bh->IsBlockHeld()) {
-        if (bh->OnBlockUp(ev->HeldDuration())) {
+    if (userEvents && ev->QUserEvent() == userEvents->leftAttack && ev->IsUp() && bh->IsLeftBlockHeld()) {
+        if (bh->OnLeftBlockUp(ev->HeldDuration())) {
             if (settings::log()) log::info("[ABHook]: denied left release");
             return;
         }
         _ProcessButton(self, ev, data);
-        bh->OnReleaseForwarded(pc);
+        bh->OnLeftReleaseForwarded(pc);
         return;
     }
     if (!userEvents) return _ProcessButton(self, ev, data);
@@ -91,7 +90,7 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
                 }
                 return;
             } else {
-                bh->OnBlockDown(ev);
+                bh->OnLeftBlockDown(ev);
             }
             return _ProcessButton(self, ev, data);
         // held down longer than power bash, power bash auto release?
@@ -133,12 +132,12 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
 }
 
 void ABHook::Check() { 
-    auto* bh = block::blockHandler::GetSingleton();
-    if (bh->IsBlockHeld()) {
+    auto* bh = blockCommit::Controller::GetSingleton();
+    if (bh->IsLeftBlockHeld()) {
         if (settings::log()) log::info("Check: blockKey is held");
         return;
     }
-    bh->TryInjectRelease(_ProcessButton);
+    bh->TryInjectLeftRelease(_ProcessButton);
 }
 
 void ABHook::Install() {

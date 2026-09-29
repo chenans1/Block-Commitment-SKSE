@@ -26,8 +26,6 @@ set(SOURCES
     src/settings.cpp
     src/utils.h
     src/utils.cpp
-    src/blockHandler.h
-    src/blockHandler.cpp
     src/updateHook.h
     src/updateHook.cpp
     src/altBlock.h

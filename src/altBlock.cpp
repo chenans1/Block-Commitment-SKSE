@@ -42,6 +42,7 @@ static bool areControlsEnabled() {
 namespace altBlock {
     static bool modifierKeyHeld = false;
     static bool isBashing = false;
+    static bool altBashKeyHeld = false;
 
     static bool isModRequired() { 
         const int modifierKey = settings::getModifierKey();
@@ -52,6 +53,38 @@ namespace altBlock {
         RE::InputEvent* const* a_events, RE::BSTEventSource<RE::InputEvent*>*) {
         if (!a_events) {
             return RE::BSEventNotifyControl::kContinue;
+        }
+        auto* blockController = blockCommit::Controller::GetSingleton();
+        const int bind = settings::getAltBlock();
+        const int modifierKey = settings::getModifierKey();
+        const bool needsModifier = isModRequired();
+        RE::InputEvent* releasedAltEvent = nullptr;
+        // Finish an active press even if a bash or menu changed the player-state checks below.
+        for (auto* event = *a_events; event != nullptr; event = event->next) {
+            auto* button = event->AsButtonEvent();
+            if (!button || !button->IsUp()) continue;
+            const int macro = settings::toKeyCode(*button);
+            if (bind > 0 && macro == bind && blockController->IsAltBlockHeld()) {
+                blockController->wantReleaseAltBlock();
+                isBashing = false;
+                releasedAltEvent = event;
+            } else if (bind > 0 && macro == bind && altBashKeyHeld) {
+                altBashKeyHeld = false;
+                if (auto* player = RE::PlayerCharacter::GetSingleton()) {
+                    if (isBashing && button->HeldDuration() < settings::powerBashDelay()) {
+                        utils::tryBashRelease(player);
+                    }
+                    if (player->IsBlocking()) {
+                        player->NotifyAnimationGraph("blockStop");
+                    }
+                    if (auto* state = player->AsActorState()) {
+                        state->actorState2.wantBlocking = 0;
+                    }
+                }
+                isBashing = false;
+                if (settings::log()) SKSE::log::info("[altBlock]: bash key released");
+                releasedAltEvent = event;
+            }
         }
         //check if the game is paused, in ui, or else:
         // const auto ui = RE::UI::GetSingleton();
@@ -93,12 +126,9 @@ namespace altBlock {
             if (settings::log()) SKSE::log::info("left key is block, altBash Disabled, no double binds - alt block denied");
             return RE::BSEventNotifyControl::kContinue;
         }
-        const int bind = settings::getAltBlock();
         if (bind <= 0) {
             return RE::BSEventNotifyControl::kContinue;
         }
-        const int modifierKey = settings::getModifierKey();
-        const bool needsModifier = isModRequired();
 
         //afaik this is a linkedlist so we gotta traverse and check
         for (auto ev = *a_events; ev != nullptr; ev = ev->next) {
@@ -118,10 +148,10 @@ namespace altBlock {
                 }
             }
             if (macro != bind) continue;
+            if (ev == releasedAltEvent) continue;
 
             auto* st = player->AsActorState();
             if (!st) { return RE::BSEventNotifyControl::kContinue; }
-            auto* blockController = blockCommit::Controller::GetSingleton();
             const bool bashInstead = settings::altBlockBash() && utils::isLeftKeyBlock(player);
             if (btn->IsDown()) {
                 if (needsModifier && !modifierKeyHeld) {
@@ -131,6 +161,9 @@ namespace altBlock {
                 //do nothing due to attack data won't be updated properly, need to fix this separately some other time
                 if (bashInstead && player->IsAttacking()) {
                     return RE::BSEventNotifyControl::kContinue;
+                }
+                if (bashInstead) {
+                    altBashKeyHeld = true;
                 }
                 if (!bashInstead) {
                     blockController->beginAltBlock();

@@ -37,7 +37,7 @@ namespace notify {
         if (!result) return result;
 
         if (a_eventName == blockStart) {
-            blockCommit::Controller::GetSingleton()->beginAltBlock();
+            blockCommit::Controller::GetSingleton()->onBlockStart();
             if (settings::isBlockCancelEnabled() && player->IsBlocking()) {
                 utils::resolveBlockCancel(player);
                 // if (!alreadyConsumed) {
