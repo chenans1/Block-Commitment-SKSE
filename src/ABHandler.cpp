@@ -60,8 +60,9 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
         // auto* bashHandler = bash::bashController::GetSingleton();
         if (ev->IsDown()) {
             if (settings::leftHandBash()){
-                releasedBash = false;
-                if (st) {
+                // releasedBash = false;
+                if (st && !pc->IsAttacking()) {
+                    releasedBash = false;
                     // pc->NotifyAnimationGraph("blockStart");
                     st->actorState2.wantBlocking = 1;
                     if (utils::tryBashStart(pc)) {
@@ -75,8 +76,9 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
                     // st->actorState2.wantBlocking = 0;
                 }
                 return;
+            } else {
+                bh->OnBlockDown();
             }
-            bh->OnBlockDown();
             return _ProcessButton(self, ev, data);
         // held down longer than power bash, power bash auto release?
         } else if (ev->IsPressed() && settings::leftHandBash() && !releasedBash) {
@@ -86,9 +88,9 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
                         utils::tryBashPowerStart(pc);
                         releasedBash = true;
                         st->actorState2.wantBlocking = 0;
-                        if (pc->IsBlocking()) {
-                            pc->NotifyAnimationGraph("blockStop");
-                        }
+                        // if (pc->IsBlocking()) {
+                        //     pc->NotifyAnimationGraph("blockStop");
+                        // }
                     }
                 }
             }
@@ -102,9 +104,9 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
                         }
                         releasedBash = true;
                         st->actorState2.wantBlocking = 0;
-                        if (pc->IsBlocking()) {
-                            pc->NotifyAnimationGraph("blockStop");
-                        }
+                        // if (pc->IsBlocking()) {
+                        //     pc->NotifyAnimationGraph("blockStop");
+                        // }
                         
                     }
                 }

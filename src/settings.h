@@ -20,7 +20,7 @@ namespace settings {
         bool forceMCORecovery = true;
         float powerAttackBlockCancelCost = 10.0f;
 
-        bool leftHandBash = true;
+        bool leftHandBash = false;
         bool fixMCOAttackCancel = true;
 
 	};
