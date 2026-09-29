@@ -181,8 +181,11 @@ namespace altBlock {
                     }
                 }
                 if (utils::tryBlockIdle(player)) {
-                    if (settings::log()) SKSE::log::info("[altBlock] tryBlockIdle Sucessful");
                     st->actorState2.wantBlocking = 1;
+                    if (settings::log()) {
+                        SKSE::log::info("[altBlock] tryBlockIdle accepted, graph blocking={}, wantBlocking={}",
+                            player->IsBlocking(), st->actorState2.wantBlocking != 0);
+                    }
                     if (bashInstead && player->AsActorState()->GetAttackState() != RE::ATTACK_STATE_ENUM::kBash) {
                         if (utils::tryBashStart(player)) {
                             isBashing = true;

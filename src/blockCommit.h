@@ -38,6 +38,7 @@ namespace blockCommit {
         bool _leftKeyHeld = false;
         bool _leftReleaseRequested = false;
         bool _altKeyHeld = false;
+        bool _altWaitingForBlockEnd = false;
         RE::INPUT_DEVICE _leftDevice = RE::INPUT_DEVICE::kKeyboard;
         std::uint32_t _leftIdCode = 0;
     };
