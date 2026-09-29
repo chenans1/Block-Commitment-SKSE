@@ -19,6 +19,7 @@ namespace block {
         _idCode = event->GetIDCode();
         _blockKeyHeld = true;
         _releaseRequested = false;
+        _waitingForBlockEnd = false;
         _pending.active = false;
         _pending.remaining = 0.0f;
         if (settings::log()) log::info("[blockHandler]: left/block key pressed");
@@ -57,6 +58,17 @@ namespace block {
     }
 
     void blockHandler::Update(float a_delta) {
+        if (_waitingForBlockEnd) {
+            auto* pc = RE::PlayerCharacter::GetSingleton();
+            if (!pc || !pc->IsBlocking()) {
+                if (pc) {
+                    if (auto* st = pc->AsActorState()) {
+                        st->actorState2.wantBlocking = 0;
+                    }
+                }
+                _waitingForBlockEnd = false;
+            }
+        }
         if (!_pending.active) {
             return;
         }
@@ -85,9 +97,22 @@ namespace block {
         if (!release) return false;
 
         processButton(controls->attackBlockHandler, release, std::addressof(controls->data));
+        OnReleaseForwarded(RE::PlayerCharacter::GetSingleton());
         RE::free(release);
         _releaseRequested = false;
         if (settings::log()) log::info("[blockHandler]: injected delayed left/block release");
         return true;
+    }
+
+    void blockHandler::OnReleaseForwarded(RE::PlayerCharacter* player) {
+        if (!player || _blockKeyHeld) return;
+        auto* st = player->AsActorState();
+        if (!st) return;
+
+        _waitingForBlockEnd = player->IsBlocking();
+        st->actorState2.wantBlocking = _waitingForBlockEnd ? 1 : 0;
+        if (settings::log()) {
+            log::info("[blockHandler]: release forwarded, graph blocking={}", _waitingForBlockEnd);
+        }
     }
 }

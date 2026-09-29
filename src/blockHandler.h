@@ -16,11 +16,13 @@ namespace block {
         bool IsBlockHeld() const { return _blockKeyHeld; }
 
         bool TryInjectRelease(ProcessButton processButton);
+        void OnReleaseForwarded(RE::PlayerCharacter* player);
 
     private:
         blockHandler() = default;
         bool _blockKeyHeld = false;
         bool _releaseRequested = false;
+        bool _waitingForBlockEnd = false;
 
         //unlock statemachine
         struct Pending {

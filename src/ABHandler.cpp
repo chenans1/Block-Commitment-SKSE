@@ -34,7 +34,9 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
             if (settings::log()) log::info("[ABHook]: denied left release");
             return;
         }
-        return _ProcessButton(self, ev, data);
+        _ProcessButton(self, ev, data);
+        bh->OnReleaseForwarded(pc);
+        return;
     }
     if (!userEvents) return _ProcessButton(self, ev, data);
     /*removed checking setings to see if mage blocking is enabled to avoid bricking controls if user installs nemesis
