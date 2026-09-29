@@ -267,6 +267,7 @@ namespace utils {
         currentProcess->high->attackData = attackData;
         return true;
     }
+
     //dont ask me wtf this is lmao
     //adapted from: https://github.com/jarari/DynamicKeyActionFramework
     bool tryIdle(RE::TESIdleForm* idle, RE::Actor* actor, RE::DEFAULT_OBJECT action = RE::DEFAULT_OBJECT::kActionIdle,
@@ -294,6 +295,13 @@ namespace utils {
         return tryIdle(blockingStartIdle, pc);
     }
 
+    using GetStaminaBash_t = float (*)(RE::ActorValueOwner*, RE::BGSAttackData*);
+
+    float GetBashStaminaCost(RE::ActorValueOwner* a_avOwner, RE::BGSAttackData* a_attackData) {
+        static REL::Relocation<GetStaminaBash_t> getCost{RELOCATION_ID(25863, 26429)};
+        return getCost(a_avOwner, a_attackData);
+    }
+
     bool tryBashStart(RE::PlayerCharacter* pc) {
         if (!pc || !bashStartIdle) {
             return false;
@@ -303,9 +311,28 @@ namespace utils {
         //     st->actorState2.wantBlocking = 1;
         //     st->actorState1.meleeAttackState = RE::ATTACK_STATE_ENUM::kBash;
         // }
-        if (pc->IsAttacking()){
+
+        auto* race = pc->GetRace();
+        auto* attackDataMap = race ? race->attackDataMap.get() : nullptr;
+        if (!attackDataMap) {
             return false;
         }
+        const auto it = attackDataMap->attackDataMap.find(RE::BSFixedString("bashStart"));
+        if (it == attackDataMap->attackDataMap.end() || !it->second) {
+            return false;
+        }
+
+        auto* attackData = it->second.get();
+        auto* actorAV = pc->AsActorValueOwner();
+        
+        if (!actorAV || !attackData) {
+            return false;
+        }
+        const float stamina = actorAV->GetActorValue(RE::ActorValue::kStamina);
+        if (pc->IsAttacking() || (stamina < GetBashStaminaCost(actorAV, attackData))){
+            return false;
+        }
+        
         auto* st = pc->AsActorState();
         st->actorState2.wantBlocking = 1;
         const bool success = pc->NotifyAnimationGraph("bashStart");

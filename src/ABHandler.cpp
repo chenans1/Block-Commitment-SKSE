@@ -40,6 +40,7 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
     }
     const auto* userEvents = RE::UserEvents::GetSingleton();
 
+    //for bashing if you've released block key but the block animation is still on
     // if (ev->QUserEvent() == userEvents->rightAttack) {
     //     if (auto* st = pc->AsActorState(); st && pc->IsBlocking() && st->actorState2.wantBlocking == 0) {
     //         st->actorState2.wantBlocking = 1;
@@ -49,6 +50,7 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
     //     }
     //     return _ProcessButton(self, ev, data);
     // }
+
     auto* st = pc->AsActorState();
     if (ev->QUserEvent() ==  userEvents->leftAttack) {
         if (!utils::isLeftKeyBlock(pc)) {
@@ -62,11 +64,12 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
             if (settings::leftHandBash()){
                 // releasedBash = false;
                 if (st && !pc->IsAttacking()) {
-                    releasedBash = false;
+                    
                     // pc->NotifyAnimationGraph("blockStart");
                     st->actorState2.wantBlocking = 1;
                     if (utils::tryBashStart(pc)) {
                         // st->actorState1.meleeAttackState = RE::ATTACK_STATE_ENUM::kBash;
+                        releasedBash = false;
                         st->actorState2.wantBlocking = 0;
                     }
                     // utils::forceUpdateBashAttackData();

@@ -211,24 +211,6 @@ namespace settings {
         unsaved |= ImGuiMCP::Checkbox("For dual wield/unarmed is left key attack? (MCO/BFCO, No)", &c.leftAttack);
         unsaved |= ImGuiMCP::Checkbox("Enable Force blockStart (attack cancel) during MCO Recovery", &c.forceMCORecovery);
 
-        unsaved |= ImGuiMCP::Checkbox("Replace left hand block with bash", &c.leftHandBash);
-        unsaved |= ImGuiMCP::Checkbox("Enable Alt Block is (power)Bashing if left key is block", &c.altBlockBash);
-        ImGuiMCP::BeginDisabled(!c.altBlockBash && !c.leftHandBash);
-        {
-            float fMinBashDelay = getPowerBashDelay();
-            ImGuiMCP::TextUnformatted("If powerBashDelay is too high, normal bash will always be fired.");
-            ImGuiMCP::Text("powerBashDelay must be >= fInitialPowerBashDelay: %.2f", fMinBashDelay);
-            unsaved |= ImGuiMCP::DragFloat("Hold Duration for powerBash", &c.powerBashDelay, 0.01f, fMinBashDelay, 0.5f, "%.2f");
-        }
-        ImGuiMCP::EndDisabled();
-
-        ImGuiMCP::BeginDisabled(c.altBlockBash || c.leftHandBash);
-        {
-            ImGuiMCP::TextUnformatted("Disable altblock/lefthand bashing to enable this option.");
-            unsaved |= ImGuiMCP::Checkbox("Disable alt block if left is already block?", &c.isDoubleBindDisabled);
-        }
-        ImGuiMCP::EndDisabled();
-
         const auto capturing = g_captureTarget.load(std::memory_order_acquire);
 
         //unsaved |= ImGuiMCP::Separator();
@@ -281,9 +263,28 @@ namespace settings {
         if (!c.enableBlockCancel) {
             ImGuiMCP::TextUnformatted("Enable Block Cancelling to edit these options.");
         }
-        
         unsaved |= ImGuiMCP::Checkbox("Fix MCO Attack Cancel Behavior", &c.fixMCOAttackCancel);
 
+        ImGuiMCP::Separator();
+        unsaved |= ImGuiMCP::Checkbox("Replace left hand block with bash", &c.leftHandBash);
+        unsaved |= ImGuiMCP::Checkbox("Enable Alt Block is (power)Bashing if left key is block", &c.altBlockBash);
+        ImGuiMCP::BeginDisabled(!c.altBlockBash && !c.leftHandBash);
+        {
+            float fMinBashDelay = getPowerBashDelay();
+            ImGuiMCP::TextUnformatted("If powerBashDelay is too high, normal bash will always be fired.");
+            ImGuiMCP::Text("powerBashDelay must be >= fInitialPowerBashDelay: %.2f", fMinBashDelay);
+            unsaved |= ImGuiMCP::DragFloat("Hold Duration for powerBash", &c.powerBashDelay, 0.01f, fMinBashDelay, 0.5f, "%.2f");
+        }
+        ImGuiMCP::EndDisabled();
+
+        ImGuiMCP::BeginDisabled(c.altBlockBash || c.leftHandBash);
+        {
+            ImGuiMCP::TextUnformatted("Disable altblock/lefthand bashing to enable this option.");
+            unsaved |= ImGuiMCP::Checkbox("Disable alt block if left is already block?", &c.isDoubleBindDisabled);
+        }
+        ImGuiMCP::EndDisabled();
+
+        ImGuiMCP::Separator();
         unsaved |= ImGuiMCP::Checkbox("Enable Alt Block for Mages? (Requires behavior patch)", &c.mageBlock);
         ImGuiMCP::BeginDisabled(!c.mageBlock);
         {
