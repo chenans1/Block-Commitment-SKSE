@@ -10,7 +10,7 @@ namespace settings {
         int modifierKey = -1;
         bool isDoubleBindDisabled = false;
         bool enableBlockCancel = true;
-        float blockCancelCost = 10.0f;
+        float blockCancelCost = 8.0f;
         bool allowMCORecovery = true;
         bool freeDuringFollowThrough = false;
         bool mageBlock = true;
@@ -19,10 +19,10 @@ namespace settings {
         float powerBashDelay = 0.2f;
         bool mageWard = true;
         bool forceMCORecovery = true;
-        float powerAttackBlockCancelCost = 10.0f;
+        float powerAttackBlockCancelCost = 12.0f;
 
         bool leftHandBash = false;
-        bool fixMCOAttackCancel = true;
+        bool fixMCOAttackCancel = false;
 
 	};
 

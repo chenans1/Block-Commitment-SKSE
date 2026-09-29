@@ -34,20 +34,22 @@ namespace notify {
         }
 
         const bool result = _PC_NotifyAnimationGraph(a_this, a_eventName);
-        
         if (!result) return result;
+
         if (a_eventName == blockStart) {
             blockCommit::Controller::GetSingleton()->beginAltBlock();
-            
-            if (settings::isBlockCancelEnabled()) {
-                if (!alreadyConsumed) {
-                    utils::resolveBlockCancel(player);
-                    alreadyConsumed = true;
-                }
+            if (settings::isBlockCancelEnabled() && player->IsBlocking()) {
+                utils::resolveBlockCancel(player);
+                // if (!alreadyConsumed) {
+                //     utils::resolveBlockCancel(player);
+                //     alreadyConsumed = true;
+                // }
             }
             
         } else if (a_eventName == blockStop) {      
-            alreadyConsumed = false;      
+            // if (player->IsBlocking()) {
+            //     alreadyConsumed = false;
+            // }
             blockCommit::Controller::GetSingleton()->reset();
             if (settings::mageBlock() && settings::mageWard() && utils::isRightHandCaster(player)) {
                 player->InterruptCast(true);
@@ -67,8 +69,7 @@ namespace notify {
         SKSE::log::info("Installing PlayerCharacter animation graph hook...");
 
         REL::Relocation<uintptr_t> PlayerCharacter_IAnimationGraphManagerHolderVtbl{RE::VTABLE_PlayerCharacter[3]};
-        _PC_NotifyAnimationGraph =
-            PlayerCharacter_IAnimationGraphManagerHolderVtbl.write_vfunc(0x1, PC_NotifyAnimationGraph);
+        _PC_NotifyAnimationGraph = PlayerCharacter_IAnimationGraphManagerHolderVtbl.write_vfunc(0x1, PC_NotifyAnimationGraph);
 
         SKSE::log::info("PlayerCharacter animation graph hook installed successfully");
     }

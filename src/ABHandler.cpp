@@ -42,16 +42,16 @@ static void ABHook_handler(RE::AttackBlockHandler* self, RE::ButtonEvent* ev, RE
     auto* st = pc->AsActorState();
 
     //for bashing if you've released block key but the block animation is still on
-    if (ev->QUserEvent() == userEvents->rightAttack) {
-        if (st && pc->IsBlocking() && st->actorState2.wantBlocking == 0) {
-            st->actorState2.wantBlocking = 1;
-            _ProcessButton(self, ev, data);
-            st->actorState2.wantBlocking = 0;
-            return;
-        }
-        return _ProcessButton(self, ev, data);
-    }
-    
+    // if (ev->QUserEvent() == userEvents->rightAttack) {
+    //     if (st && pc->IsBlocking() && st->actorState2.wantBlocking == 0) {
+    //         st->actorState2.wantBlocking = 1;
+    //         _ProcessButton(self, ev, data);
+    //         st->actorState2.wantBlocking = 0;
+    //         return;
+    //     }
+    //     return _ProcessButton(self, ev, data);
+    // }
+
     const bool isDrawn = st->IsWeaponDrawn();
     if (ev->QUserEvent() ==  userEvents->leftAttack) {
         if (!utils::isLeftKeyBlock(pc)) {
