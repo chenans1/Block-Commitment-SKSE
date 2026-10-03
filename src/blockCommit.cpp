@@ -14,7 +14,7 @@ namespace blockCommit {
     }
 
     void Controller::updateWantBlocking(RE::PlayerCharacter* player) {
-        // Released alt block keeps bash input active until the blocking graph exits.
+        // Released alt block keeps bash input active until its committed stop.
         if (player) {
             if (auto* state = player->AsActorState()) {
                 state->actorState2.wantBlocking = (_leftKeyHeld || _altKeyHeld || _altWaitingForBlockEnd) ? 1 : 0;
@@ -94,12 +94,19 @@ namespace blockCommit {
         }
         const bool hadPendingRelease = _alt.releasePending || _altWaitingForBlockEnd;
         _altKeyHeld = true;
+        _altBlockRequested = false;
         _altWaitingForBlockEnd = false;
         _alt = {};
         if (settings::log()) {
-            SKSE::log::info("[blockCommit]: beginAltBlock, prior graph blocking={}, wantBlocking={}, pending release={}",
-                wasBlocking, wantedBlocking, hadPendingRelease);
+            bool graphBlocking = false;
+            const bool hasGraphState = player && player->GetGraphVariableBool("IsBlocking", graphBlocking);
+            SKSE::log::info("[blockCommit]: beginAltBlock, prior actor blocking={}, graph blocking={}, graph state available={}, wantBlocking={}, pending release={}",
+                wasBlocking, graphBlocking, hasGraphState, wantedBlocking, hadPendingRelease);
         }
+    }
+
+    void Controller::onAltBlockRequested() {
+        _altBlockRequested = true;
     }
 
     void Controller::onBlockStart() {
@@ -115,12 +122,13 @@ namespace blockCommit {
         _altKeyHeld = false;
         auto* player = RE::PlayerCharacter::GetSingleton();
         const bool wasBlocking = player && player->IsBlocking();
-        _altWaitingForBlockEnd = wasBlocking;
+        _altWaitingForBlockEnd = _altBlockRequested;
         updateWantBlocking(player);
         if (settings::log()) {
-            SKSE::log::info("[blockCommit]: alt key released, graph blocking={}", wasBlocking);
+            SKSE::log::info("[blockCommit]: alt key released, actor blocking={}, block requested={}",
+                wasBlocking, _altBlockRequested);
         }
-        if (!wasBlocking || releaseReady(_alt)) {
+        if (!_altBlockRequested || releaseReady(_alt)) {
             stopAltBlocking();
             return;
         }
@@ -132,27 +140,36 @@ namespace blockCommit {
     }
 
     void Controller::stopAltBlocking() {
+        const bool hadAltBlockRequest = _altBlockRequested;
         _alt = {};
         _altKeyHeld = false;
+        _altBlockRequested = false;
+        _altWaitingForBlockEnd = false;
         auto* player = RE::PlayerCharacter::GetSingleton();
         const bool wasBlocking = player && player->IsBlocking();
+        // Clear the block request before sending blockStop so its handler sees
+        // the released state and cannot continue the alt block.
+        updateWantBlocking(player);
         if (player) {
-            if (auto* state = player->AsActorState()) {
-                if (wasBlocking) {
-                    player->NotifyAnimationGraph("blockStop");
-                    if (settings::log()) SKSE::log::info("[blockCommit]: delayed blockStop fired");
+            if (hadAltBlockRequest && !_leftKeyHeld) {
+                const bool accepted = player->NotifyAnimationGraph("blockStop");
+                if (settings::log()) {
+                    bool graphBlocking = false;
+                    const bool hasGraphState = player->GetGraphVariableBool("IsBlocking", graphBlocking);
+                    SKSE::log::info("[blockCommit]: delayed blockStop accepted={}, actor blocking before={}, actor blocking after={}, graph blocking={}, graph state available={}",
+                        accepted, wasBlocking, player->IsBlocking(), graphBlocking, hasGraphState);
                 }
             }
         }
-        _altWaitingForBlockEnd = false;
-        updateWantBlocking(player);
-        if (settings::log() && !wasBlocking) {
-            SKSE::log::info("[blockCommit]: alt release completed after graph exit");
+        if (settings::log() && !hadAltBlockRequest) {
+            SKSE::log::info("[blockCommit]: alt release completed without a block request");
         }
     }
 
     void Controller::reset() {
-        // A bash or another animation may stop blocking before release is due.
+        // An interrupted attack can briefly leave the blocking state before
+        // the committed alt release is due. Keep its scheduled blockStop.
+        if (_alt.releasePending) return;
         if (_altWaitingForBlockEnd) {
             _altWaitingForBlockEnd = false;
             updateWantBlocking(RE::PlayerCharacter::GetSingleton());
@@ -164,19 +181,12 @@ namespace blockCommit {
     void Controller::Update(float a_delta) {
         auto* player = RE::PlayerCharacter::GetSingleton();
         const bool isBlocking = player && player->IsBlocking();
-        if (_alt.releasePending && !isBlocking) {
-            stopAltBlocking();
-        } else if (_altWaitingForBlockEnd && !isBlocking) {
-            _altWaitingForBlockEnd = false;
-            updateWantBlocking(player);
-            if (settings::log()) SKSE::log::info("[blockCommit]: alt release state cleared on graph exit");
-        }
 
         if (a_delta > 0.0f) {
             if ((_leftKeyHeld && isBlocking) || _left.releasePending) {
                 _left.elapsed += a_delta;
             }
-            if ((_altKeyHeld || _alt.releasePending) && isBlocking) {
+            if ((_altKeyHeld && isBlocking) || _alt.releasePending) {
                 _alt.elapsed += a_delta;
             }
         }

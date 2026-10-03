@@ -176,14 +176,16 @@ namespace altBlock {
                                 player->NotifyAnimationGraph("blockStart");
                             }
                             st->actorState2.wantBlocking = 1;
+                            blockController->onAltBlockRequested();
                             return RE::BSEventNotifyControl::kContinue;
                         }
                     }
                 }
                 if (utils::tryBlockIdle(player)) {
                     st->actorState2.wantBlocking = 1;
+                    if (!bashInstead) blockController->onAltBlockRequested();
                     if (settings::log()) {
-                        SKSE::log::info("[altBlock] tryBlockIdle accepted, graph blocking={}, wantBlocking={}",
+                        SKSE::log::info("[altBlock] tryBlockIdle accepted, actor blocking={}, wantBlocking={}",
                             player->IsBlocking(), st->actorState2.wantBlocking != 0);
                     }
                     if (bashInstead && player->AsActorState()->GetAttackState() != RE::ATTACK_STATE_ENUM::kBash) {
