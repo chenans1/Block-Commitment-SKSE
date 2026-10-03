@@ -58,34 +58,34 @@ namespace altBlock {
         const int bind = settings::getAltBlock();
         const int modifierKey = settings::getModifierKey();
         const bool needsModifier = isModRequired();
-        RE::InputEvent* releasedAltEvent = nullptr;
-        // Finish an active press even if a bash or menu changed the player-state checks below.
-        for (auto* event = *a_events; event != nullptr; event = event->next) {
-            auto* button = event->AsButtonEvent();
-            if (!button || !button->IsUp()) continue;
-            const int macro = settings::toKeyCode(*button);
-            if (bind > 0 && macro == bind && blockController->IsAltBlockHeld()) {
-                blockController->wantReleaseAltBlock();
-                isBashing = false;
-                releasedAltEvent = event;
-            } else if (bind > 0 && macro == bind && altBashKeyHeld) {
-                altBashKeyHeld = false;
-                if (auto* player = RE::PlayerCharacter::GetSingleton()) {
-                    if (isBashing && button->HeldDuration() < settings::powerBashDelay()) {
-                        utils::tryBashRelease(player);
-                    }
-                    if (player->IsBlocking()) {
-                        player->NotifyAnimationGraph("blockStop");
-                    }
-                    if (auto* state = player->AsActorState()) {
-                        state->actorState2.wantBlocking = 0;
-                    }
-                }
-                isBashing = false;
-                if (settings::log()) SKSE::log::info("[altBlock]: bash key released");
-                releasedAltEvent = event;
-            }
-        }
+        // RE::InputEvent* releasedAltEvent = nullptr;
+        // // Finish an active press even if a bash or menu changed the player-state checks below.
+        // for (auto* event = *a_events; event != nullptr; event = event->next) {
+        //     auto* button = event->AsButtonEvent();
+        //     if (!button || !button->IsUp()) continue;
+        //     const int macro = settings::toKeyCode(*button);
+        //     if (bind > 0 && macro == bind && blockController->IsAltBlockHeld()) {
+        //         blockController->wantReleaseAltBlock();
+        //         isBashing = false;
+        //         releasedAltEvent = event;
+        //     } else if (bind > 0 && macro == bind && altBashKeyHeld) {
+        //         altBashKeyHeld = false;
+        //         if (auto* player = RE::PlayerCharacter::GetSingleton()) {
+        //             if (isBashing && button->HeldDuration() < settings::powerBashDelay()) {
+        //                 utils::tryBashRelease(player);
+        //             }
+        //             if (player->IsBlocking()) {
+        //                 player->NotifyAnimationGraph("blockStop");
+        //             }
+        //             if (auto* state = player->AsActorState()) {
+        //                 state->actorState2.wantBlocking = 0;
+        //             }
+        //         }
+        //         isBashing = false;
+        //         if (settings::log()) SKSE::log::info("[altBlock]: bash key released");
+        //         releasedAltEvent = event;
+        //     }
+        // }
         //check if the game is paused, in ui, or else:
         // const auto ui = RE::UI::GetSingleton();
         if (!isUIClosed() || !areControlsEnabled()) {
@@ -148,7 +148,7 @@ namespace altBlock {
                 }
             }
             if (macro != bind) continue;
-            if (ev == releasedAltEvent) continue;
+            // if (ev == releasedAltEvent) continue;
 
             auto* st = player->AsActorState();
             if (!st) { return RE::BSEventNotifyControl::kContinue; }
