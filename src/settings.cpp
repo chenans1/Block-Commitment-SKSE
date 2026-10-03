@@ -15,6 +15,15 @@ static float ini_float(CSimpleIniA& ini, const char* section, const char* key, f
     return static_cast<float>(ini.GetDoubleValue(section, key, def));
 }
 
+std::string GetKeyDisplayName(const int keyCode) {
+    if (keyCode < 0) {
+        return "Unbound";
+    }
+
+    auto name = SKSE::InputMap::GetKeyName(static_cast<std::uint32_t>(keyCode));
+    return name.empty() ? "Unknown (" + std::to_string(keyCode) + ")" : name;
+}
+
 namespace settings {
     //some stuff to handle the capturing of the keybind since i think onInput just straight up always polls even if the menu is closed
     inline std::atomic_bool g_captureBind{false};
@@ -216,8 +225,9 @@ namespace settings {
         const auto capturing = g_captureTarget.load(std::memory_order_acquire);
 
         //unsaved |= ImGuiMCP::Separator();
-        ImGuiMCP::Text("AltBlock Key: %d", c.altBlockKey);
-
+        // ImGuiMCP::Text("AltBlock Key: %d", c.altBlockKey);
+        const std::string altBlockKeyName = GetKeyDisplayName(cfg.altBlockKey);
+        ImGuiMCP::Text("Alt Block Key: %s", altBlockKeyName.c_str());
         if (capturing == CaptureTarget::AltBlock) {
             ImGuiMCP::SameLine();
             ImGuiMCP::TextUnformatted("Press a key... (ESC = unbind which disables)");
@@ -232,8 +242,9 @@ namespace settings {
         }
 
         //ImGuiMCP::Separator();
-        ImGuiMCP::Text("Modifier Key: %d", c.modifierKey);
-
+        // ImGuiMCP::Text("Modifier Key: %d", c.modifierKey);
+        const std::string modifierKeyName = GetKeyDisplayName(cfg.modifierKey);
+        ImGuiMCP::Text("Modifier Key: %s", modifierKeyName.c_str());
         if (capturing == CaptureTarget::Modifier) {
             ImGuiMCP::SameLine();
             ImGuiMCP::TextUnformatted("Press a key... (ESC = unbind which disables modifier key)");
@@ -251,8 +262,10 @@ namespace settings {
             ImGuiMCP::Separator();
             ImGuiMCP::TextUnformatted("Listening for input... (ESC unbinds)");
         }
-
+        
         // block cancelling stuff
+        ImGuiMCP::NewLine();
+        // ImGuiMCP::Separator();
         unsaved |= ImGuiMCP::Checkbox("Enable Block Cancelling Stamina Cost", &c.enableBlockCancel);
         ImGuiMCP::BeginDisabled(!c.enableBlockCancel);
         {   
@@ -268,7 +281,9 @@ namespace settings {
         }
         unsaved |= ImGuiMCP::Checkbox("Fix MCO Attack Cancel Behavior", &c.fixMCOAttackCancel);
 
-        ImGuiMCP::Separator();
+        // one click bash/powerbash
+        ImGuiMCP::NewLine();
+        // ImGuiMCP::Separator();
         unsaved |= ImGuiMCP::Checkbox("Replace left hand block with bash", &c.leftHandBash);
         unsaved |= ImGuiMCP::Checkbox("Enable Alt Block is (power)Bashing if left key is block", &c.altBlockBash);
         ImGuiMCP::BeginDisabled(!c.altBlockBash && !c.leftHandBash);
@@ -287,7 +302,9 @@ namespace settings {
         }
         ImGuiMCP::EndDisabled();
 
-        ImGuiMCP::Separator();
+        //mage block stuff, need to fix blockhit behavior but it's complex
+        ImGuiMCP::NewLine();
+        // ImGuiMCP::Separator();
         unsaved |= ImGuiMCP::Checkbox("Enable Alt Block for Mages? (Requires behavior patch)", &c.mageBlock);
         ImGuiMCP::BeginDisabled(!c.mageBlock);
         {
@@ -299,6 +316,8 @@ namespace settings {
         }
         ImGuiMCP::EndDisabled();
         
+        ImGuiMCP::NewLine();
+        // ImGuiMCP::Separator();
         unsaved |= ImGuiMCP::Checkbox("Enable Log", &c.log);
 
         if (ImGuiMCP::Button("Save")) {
