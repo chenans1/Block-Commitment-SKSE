@@ -4,7 +4,7 @@ namespace settings {
 	struct config {
         bool log = false;
         bool enableBlockCommitment = true;
-        float commitDuration = 0.5f;
+        float commitDuration = 0.35f;
         bool leftAttack = false;
         int altBlockKey = -1;
         int modifierKey = -1;
@@ -13,11 +13,11 @@ namespace settings {
         float blockCancelCost = 8.0f;
         bool allowMCORecovery = true;
         bool freeDuringFollowThrough = false;
-        bool mageBlock = true;
-        bool mageBash = true;
-        bool altBlockBash = true;
+        bool mageBlock = false;
+        bool mageBash = false;
+        bool altBlockBash = false;
         float powerBashDelay = 0.2f;
-        bool mageWard = true;
+        bool mageWard = false;
         bool forceMCORecovery = true;
         float powerAttackBlockCancelCost = 12.0f;
 
